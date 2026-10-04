@@ -1,0 +1,23 @@
+{
+  "sources": {
+    "example_scenario_1": {
+      "example_key_1": {
+        "title": "Example Question 1",
+        "content": "Example reference content for your domain. Replace this with your actual reference data.",
+        "reference": "https://example.com/reference1"
+      },
+      "example_key_2": {
+        "title": "Example Question 2",
+        "content": "Another example reference content for your domain.",
+        "reference": "https://example.com/reference2"
+      }
+    },
+    "example_scenario_2": {
+      "example_key_1": {
+        "title": "Example Question 3",
+        "content": "Example reference content for scenario 2.",
+        "reference": "https://example.com/reference3"
+      }
+    }
+  }
+}

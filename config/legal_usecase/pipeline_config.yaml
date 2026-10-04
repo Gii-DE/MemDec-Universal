@@ -1,0 +1,92 @@
+# Pipeline Config for Legal Use-Case
+
+pipeline:
+  corpus_name: "legal_corpus"
+  sources_path: "config/legal_usecase/sources.json"
+  models:
+    default_model: "gemma3"
+
+# Step-specific configs
+steps:
+  step0_data_management:
+    datasets:
+      - "laws_germany_10k"
+      - "cases2026_10k"
+  
+  step0_dataset:
+    default_dataset: "bverfg_decisions" # for remote downloads (URL-based Dataset)
+    #local_file: "gerdalir_queries"     # for local files (in data/ folder)
+  
+  step1_cleaning:
+    hf_config: "cases2026_10k"
+    hf_dataset: "openlegaldata/court-decisions-germany"
+    #min_text_length: 10
+    #min_alpha_ratio: 0.3
+    #chunk_size: 5000
+    #check_duplicates: true
+    
+  step2_tokenization:
+    dataset_cleaned: "legal_corpus"
+    # "base_model" is auto-derived from default_model
+    #train_test_split: 0.8
+    num_workers: 4
+  
+  step3_pretraining:
+    tokenized_data: "legal_corpus_tokenized-gemma3"
+    # "base_model" is auto-derived from tokenized_data
+    batch_size: 32    # use 8 on CPU/low-VRAM
+    #seed: 42
+    #ncentroids: 2048
+    #num_keys_to_add_at_a_time: 100000
+  
+  step4_training:
+    #no_unsloth: false
+    tokenized_data: "legal_corpus_tokenized-gemma3"
+    # "base_model" is auto-derived from tokenized_data
+    max_steps: 1000
+    checkpointing_steps: 50
+    #checkpoint: "step_100"
+    #learning_rate: 1.5e-4
+    #k_neighbors: 4
+    #alpha: 0.5
+    #lmbda: 0.3
+    #seed: 42
+    #per_device_train_batch_size: 4
+    #gradient_accumulation_steps: 4
+  
+  step5_testing:
+    checkpoint: "gemma-step_1000"
+    # "base_model" is auto-derived from checkpoint
+    #base_model: "unsloth/gemma-3-1b-it"  # test with different base model of same family
+    #lmbda: 0.3
+    #knn_temp: 1.0
+    max_new_tokens: 512
+    repetition_penalty: 1.2
+    #seed: 42
+    scenarios:
+      #- "withdrawals"
+      #- "employment"
+      #- "tax"
+      #- "rental"
+      #- "passenger_rights"
+    tasks:
+      #- "question_answering"
+      #- "completion"
+      #- "summarization"
+      #- "content_creation"
+    #save_results: true
+    #compare_base: true
+  
+  step5_evaluation:
+    checkpoint: "gemma-step_1000"
+    tokenized_data: "legal_corpus_tokenized-gemma3"
+    # "base_model" is auto-derived from checkpoint
+    #base_model: "unsloth/gemma-3-1b-it"  # test with different base model of same family
+    #split: "test"
+    max_examples: 100
+    #lmbda: 0.3
+    #knn_temp: 1.0
+    batch_size: 4
+    #seed: 42
+    #save_results: true
+    #compare_base: true

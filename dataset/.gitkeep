@@ -1,0 +1,10 @@
+# Placeholder — keeps this directory in git while its contents stay ignored.
+
+# Downloaded, extracted, cleaned & tokenized datasets land here (see README):
+#
+#   /dataset
+#       /<cleaned dataset>                          # Folder
+#       /<cleaned dataset>_tokenized-<model>        # Folder
+#       /<corpus_name>                              # Folder
+#       /<corpus_name>_tokenized-<model>            # Folder
+#       /<corpus_name>_index.json

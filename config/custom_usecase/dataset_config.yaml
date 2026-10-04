@@ -1,0 +1,43 @@
+# Dataset Config Template for Custom Domain
+
+local_files:      # Local Dataset (already downloaded & placed in data/ folder)
+  # custom_dataset1:
+  #   path: "config/custom_usecase/data/dataset1.json"
+  #   format: "json"
+  #   description: "Custom dataset 1"
+
+  # custom_dataset2:
+  #   path: "config/custom_usecase/data/dataset2.jsonl"
+  #   format: "jsonl"
+  #   description: "Custom dataset 2"
+
+  # custom_dataset3:
+  #   path: "config/custom_usecase/data/dataset3.gz"
+  #   format: "gz"
+  #   description: "Custom dataset 3"
+
+
+datasets:         # URL-based Dataset (for remote downloads)
+  # custom_dataset_small:
+  #   url: "https://example.com/dataset-small.json.gz"
+  #   format: "json"
+  #   description: "Small subset of custom domain data"
+
+
+huggingface:      # HuggingFace Dataset
+  # NOTE: use at least 10k samples for proper MemDec-training
+  datasets:
+    # Example:
+    # - dataset_name: "your-org/your-dataset"
+    #   split: "train"
+    #   output_name: "custom_dataset"
+    #   description: "Your custom dataset"
+    #   config: null
+    #   field_mapping:
+    #     text: ["text", "content"]
+    #     meta_category: ["category", "source"]
+    #     meta_date: ["date"]
+    #     id: ["id"]
+  
+  config_mappings: {}                   # Config mappings
+  default_config: null                  # Default config

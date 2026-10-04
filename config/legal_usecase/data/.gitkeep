@@ -1,0 +1,17 @@
+# Placeholder — keeps this directory in git while dataset files stay untracked.
+
+# Place your custom dataset files here (.json, .jsonl, .csv, .tsv or tar.gz):
+#
+#   /legal_usecase
+#       /data
+#           /<dataset>.json
+#           /<dataset>.jsonl
+#           /<dataset>.csv
+#           /<dataset>.tsv
+#           /<dataset>.json.gz
+#           /<dataset>.jsonl.gz
+#           /<dataset>.csv.gz
+#           /<dataset>.tsv.gz
+#           /<dataset>.tar.gz
+
+# Register them in dataset_config.yaml (see README/HowTo).

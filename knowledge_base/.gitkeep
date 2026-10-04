@@ -1,0 +1,11 @@
+# Placeholder — keeps this directory in git while its contents stay ignored.
+
+# KNN datastores & FAISS indices for MemDec Training land here (see README):
+#
+#   /knowledge_base
+#       /dstore_gemma3_text_640.arrow   # Gemma3 (270M)
+#       /index_gemma3_text_640.index
+#       /dstore_qwen3_5_text_1024.arrow # Qwen3.5 (0.8B)
+#       /index_qwen3_5_text_1024.index
+#       /dstore_smollm3_2048.arrow      # SmolLM3 (3B)
+#       /index_smollm3_2048.index

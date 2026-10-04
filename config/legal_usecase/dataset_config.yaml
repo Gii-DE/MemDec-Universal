@@ -1,0 +1,140 @@
+# Open Legal Data for Legal Use-Case
+
+# ============================================================
+# Other Datasets (Optional)
+# ============================================================
+local_files:      # Local Dataset (placed in data/ folder)
+  gerdalir_queries:     # source: https://lavis.cs.hs-rm.de/storage/gerdalir/data/queries.tar.gz
+    path: "config/legal_usecase/data/queries.tar.gz"
+    format: "tar.gz"
+    description: "GerDaLIR queries contains passages with references; using train split (98,032)"
+    field_mapping:
+      text: ["text"]
+      id: ["id"]
+
+datasets:         # URL-based Dataset (for remote downloads)
+  bundesrecht:          # source: https://huggingface.co/datasets/harshildarji/bundesrecht
+    url: "https://huggingface.co/datasets/harshildarji/bundesrecht/resolve/main/gesetze.jsonl"
+    format: "jsonl"
+    description: "German federal laws & regulations from gesetze-im-internet.de (104,764)"
+    field_mapping:
+      text: ["title", "text"]
+      id: ["id"]
+      meta_category: ["category"]
+      meta_date: ["date"]
+
+  bverfg_decisions:  # source: https://github.com/dertilo/german-legal-data
+    url: "https://github.com/dertilo/german-legal-data/raw/refs/heads/master/BverfG.jsonl.gz"
+    format: "jsonl.gz"
+    description: "BverfG decisions (16,197)"
+    field_mapping:
+      text: ["title", "Orientierungssatz", "Tenor", "Gründe"]
+      id: ["aktenzeichen", "url"]
+      meta_date: ["entscheidungsdatum", "date"]
+
+# ============================================================
+# Datasets of Open Legal Data
+# ============================================================
+huggingface:      # HuggingFace Dataset
+  datasets:             # source: https://huggingface.co/openlegaldata/datasets
+    # 2026 Laws
+    - dataset_name: "openlegaldata/laws-germany"
+      split: "train"
+      output_name: "laws_germany_10k"
+      description: "10k sample of German laws from May 2025"
+      config: "dump-20260520-10k"
+      field_mapping:
+        text: ["title", "markdown_content"]
+        meta_category: ["book_code", "book_slug"]
+        meta_date: ["created_date", "updated_date"]
+        id: ["id", "slug"]
+    - dataset_name: "openlegaldata/laws-germany"
+      split: "train"
+      output_name: "laws_germany_big"
+      description: "Full German laws dataset from May 2025"
+      config: "dump-20260520"
+      field_mapping:
+        text: ["title", "markdown_content"]
+        meta_category: ["book_code", "book_slug"]
+        meta_date: ["created_date", "updated_date"]
+        id: ["id", "slug"]
+
+    # 2026 Cases
+    - dataset_name: "openlegaldata/court-decisions-germany"
+      split: "train"
+      output_name: "cases2026_10k"
+      description: "10k sample from May 2026"
+      config: "dump-20260520-10k"
+      field_mapping:
+        text: ["markdown_content"]
+        meta_category: ["type", "court"]
+        meta_date: ["date", "created_date"]
+        id: ["id", "slug", "file_number"]
+    - dataset_name: "openlegaldata/court-decisions-germany"
+      split: "train"
+      output_name: "cases2026_big"
+      description: "Full dataset from May 2026"
+      config: "dump-20260520"
+      field_mapping:
+        text: ["markdown_content"]
+        meta_category: ["type", "court"]
+        meta_date: ["date", "created_date"]
+        id: ["id", "slug", "file_number"]
+
+    # 2022 Cases (Legacy)
+    - dataset_name: "openlegaldata/court-decisions-germany"
+      split: "train"
+      output_name: "cases2022_10k"
+      description: "10k sample from October 2022 (legacy)"
+      config: "dump-20221018-10k"
+      field_mapping:
+        text: ["markdown_content"]
+        meta_category: ["type", "court"]
+        meta_date: ["date", "created_date"]
+        id: ["id", "slug", "file_number"]
+    - dataset_name: "openlegaldata/court-decisions-germany"
+      split: "train"
+      output_name: "cases2022_big"
+      description: "Full dataset from October 2022 (legacy)"
+      config: "dump-20221018"
+      field_mapping:
+        text: ["markdown_content"]
+        meta_category: ["type", "court"]
+        meta_date: ["date", "created_date"]
+        id: ["id", "slug", "file_number"]
+
+    # Minimal Dataset (use at least 10k for proper MemDec-training)
+    - dataset_name: "openlegaldata/laws-germany"
+      split: "train"
+      output_name: "laws_germany_1k"
+      description: "1k sample of German laws from May 2025"
+      config: "dump-20260520-1k"
+      field_mapping:
+        text: ["title", "markdown_content"]
+        meta_category: ["book_code", "book_slug"]
+        meta_date: ["created_date", "updated_date"]
+        id: ["id", "slug"]
+    - dataset_name: "openlegaldata/court-decisions-germany"
+      split: "train"
+      output_name: "cases2026_1k"
+      description: "1k sample from May 2026"
+      config: "dump-20260520-1k"
+      field_mapping:
+        text: ["markdown_content"]
+        meta_category: ["type", "court"]
+        meta_date: ["date", "created_date"]
+        id: ["id", "slug", "file_number"]
+    - dataset_name: "openlegaldata/court-decisions-germany"
+      split: "train"
+      output_name: "cases2022_1k"
+      description: "1k sample from October 2022 (legacy)"
+      config: "dump-20221018-1k"
+      field_mapping:
+        text: ["markdown_content"]
+        meta_category: ["type", "court"]
+        meta_date: ["date", "created_date"]
+        id: ["id", "slug", "file_number"]
+  
+  
+  config_mappings: {}                   # Config mappings
+  default_config: "dump-20260520-10k"   # Default config

@@ -1,0 +1,28 @@
+{
+  "models": {
+    "gemma3": {
+      "name": "unsloth/gemma-3-270m-it",
+      "description": "Gemma 3 270M (LLM)",
+      "dstore": "dstore_gemma3_text_640.arrow",
+      "index": "index_gemma3_text_640.index"
+    },
+    "gemma3-1b": {
+      "name": "unsloth/gemma-3-1b-it",
+      "description": "Gemma 3 1B (LLM)",
+      "dstore": "dstore_gemma3_text_1152.arrow",
+      "index": "index_gemma3_text_1152.index"
+    },
+    "qwen3.5": {
+      "name": "unsloth/Qwen3.5-0.8B",
+      "description": "Qwen 3.5 0.8B (LLM)",
+      "dstore": "dstore_qwen3_5_text_1024.arrow",
+      "index": "index_qwen3_5_text_1024.index"
+    },
+    "smollm3": {
+      "name": "unsloth/SmolLM3-3B",
+      "description": "SmolLM3 3B (LLM)",
+      "dstore": "dstore_smollm3_2048.arrow",
+      "index": "index_smollm3_2048.index"
+    }
+  }
+}

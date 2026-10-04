@@ -1,0 +1,6 @@
+# Placeholder — keeps this directory in git while its contents stay ignored.
+
+# Trained checkpoints land here (see README):
+#
+#   /outputs
+#       /step_<checkpoint step X>

@@ -1,0 +1,24 @@
+# Test Cases Template for Custom Domain
+
+test_cases:
+  # Example scenario 1
+  example_scenario_1:
+    title: "Example Scenario 1 Title"
+    task: "mixed"  # Options: mixed, qa, tc, ts, cc
+    prompts:
+      - type: "qa"  # Question Answering
+        text: "QUESTION:\nYour example question here?\n\nANSWER:\n"
+      - type: "tc"  # Text Completion
+        text: "TASK: Complete the text with placeholders.\n\nText with [placeholder] to fill.\n"
+      - type: "ts"  # Text Summarization
+        text: "TASK: Summarize the following text.\n\nTEXT:\nYour example text here.\n\nSUMMARY:\n"
+      - type: "cc"  # Content Creation
+        text: "TASK: Create a document with specific format.\n\nREQUIREMENTS:\n- Requirement 1\n- Requirement 2\n\nOUTPUT:\n"
+  
+  # Example scenario 2
+  example_scenario_2:
+    title: "Example Scenario 2 Title"
+    task: "mixed"
+    prompts:
+      - type: "qa"
+        text: "QUESTION:\nAnother example question?\n\nANSWER:\n"

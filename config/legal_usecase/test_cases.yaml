@@ -1,0 +1,67 @@
+# Test Cases for Legal Use-Case
+
+test_cases:
+  withdrawals:
+    title: "Widerrufsrecht & Belehrung (§§ 312g, 355 BGB)"
+    task: "mixed"
+    prompts:
+      - type: "qa"
+        text: "FRAGE:\nIch habe online (Fernabsatz) ein Hemd bestellt und will es nach Lieferung zurückgeben. Habe ich ein Widerrufsrecht und wie lange ist die Widerrufsfrist?\n\nANTWORT (mit Gesetz + Begründung):\n"
+      - type: "tc"
+        text: "AUFGABE (Vervollständigung): Ergänze ausschließlich die Platzhalter in den eckigen Klammern. Gib als Ausgabe NUR den vollständig ausgefüllten Text aus.\n\nText:\nDie Widerrufsfrist beträgt [___] Tage. Ausreichend ist es, wenn Sie die Widerrufserklärung innerhalb der Frist [___]. Bei einem Kaufvertrag beginnt die Widerrufsfrist in der Regel am Tag nach dem [___]."
+      - type: "ts"
+        text: "AUFGABE (Zusammenfassung): Fasse den folgenden juristischen Text in einfacher Sprache zusammen (max. 3 Sätze).\n\nTEXT:\nAls Verbraucherin oder Verbraucher müssen Sie den Widerruf gegenüber der Unternehmerin oder dem Unternehmer erklären (§ 355 BGB). Dies ist formfrei möglich, kann also auch mündlich, per Telefon oder per E-Mail erfolgen. Aus Beweisgründen empfiehlt es sich jedoch, die Widerrufserklärung schriftlich zu verfassen. Sie können für den Widerruf auch das gesetzliche Muster-Widerrufsformular verwenden.\n\nZUSAMMENFASSUNG:\n"
+      - type: "cc"
+        text: "AUFGABE (Dokument erstellen): Erstelle ein kurzes Widerrufsschreiben an einen Online-Händler im Musterformat.\n\nMUSS ENTHALTEN:\n- Betreff: Widerruf\n- Hinweis auf § 355 BGB\n- Bitte um Bestätigung\n- Platzhalter: <NAME>, <ADRESSE>, <BESTELLNUMMER>, <DATUM_ERHALT>, <DATUM>\n\nWIDERRUFSSCHREIBEN:\n"
+
+  employment:
+    title: "Kündigungsschutz & Klagefrist (§§ 1, 4 KSchG)"
+    task: "mixed"
+    prompts:
+      - type: "qa"
+        text: "FRAGE:\nIch habe gestern eine schriftliche Kündigung erhalten. Wie lange habe ich Zeit, eine Kündigungsschutzklage einzureichen, und wo muss ich klagen?\n\nANTWORT (mit Gesetz + Begründung):\n"
+      - type: "tc"
+        text: "AUFGABE (Vervollständigung): Ergänze ausschließlich die Platzhalter in den eckigen Klammern. Gib als Ausgabe NUR den vollständig ausgefüllten Text aus.\n\nText:\nEine Kündigungsschutzklage muss innerhalb von [___] Wochen nach Zugang der schriftlichen Kündigung vor dem zuständigen [___] erhoben werden (§ 4 Satz 1 KSchG)."
+      - type: "ts"
+        text: "AUFGABE (Zusammenfassung): Fasse den folgenden juristischen Text in einfacher Sprache zusammen (max. 3 Sätze).\n\nTEXT:\nEine Arbeitnehmerin bzw. ein Arbeitnehmer kann gegen eine Kündigung gerichtlich klagen (Kündigungsschutzklage). Sie bzw. er muss dies innerhalb von drei Wochen nach Zugang der schriftlichen Kündigung vor dem zuständigen Arbeitsgericht tun (§ 4 Satz 1 KSchG).\n\nZUSAMMENFASSUNG:\n"
+      - type: "cc"
+        text: "AUFGABE (Dokument erstellen): Erstelle ein kurzes Muster (Vorlage) für eine Kündigungsschutzklage im korrekten Aufbau (keine langen Ausführungen).\n\nMUSS ENTHALTEN:\n- Überschrift: Kündigungsschutzklage\n- Zuständiges Gericht: Arbeitsgericht <ORT>\n- Parteien: <ARBEITNEHMER> gegen <ARBEITGEBER>\n- Sachverhalt (kurz): Kündigung vom <DATUM_KUENDIGUNG>, Zugang am <ZUGANGSDATUM>\n- Antrag: Feststellung, dass das Arbeitsverhältnis durch die Kündigung nicht aufgelöst ist\n- Hinweis auf § 4 Satz 1 KSchG\n- Unterschrift: <UNTERSCHRIFT>\n\nKlage-Vorlage:\n"
+
+  tax:
+    title: "Rechtsbehelfsbelehrung (§§ 356, 57 AO)"
+    task: "mixed"
+    prompts:
+      - type: "qa"
+        text: "FRAGE:\nWelche Anforderungen gelten für eine Rechtsbehelfsbelehrung und was gilt für die Einspruchsfrist, wenn die Belehrung fehlt oder falsch ist?\n\nANTWORT (mit Gesetz + Begründung):\n"
+      - type: "tc"
+        text: "AUFGABE (Vervollständigung): Fülle ausschließlich die Platzhalter [START-DATUM], [START-UHRZEIT], [MONATSENDE], [ENDDATUM], [END-UHRZEIT]. Gib als Ausgabe NUR den finalen Satz aus (keine zusätzlichen Sätze, keine Erklärungen, kein Markdown, keine Anführungszeichen).\n\nKontext: Das Finanzamt gibt Ihren Steuerbescheid am Donnerstag, den 30.08.2025, zur Post. Nach Ablauf des 4. Tages gilt der Steuerbescheid als bekannt gegeben. Das wäre also Montag, der 03.09.2025 um 00:00 Uhr. Anmerkung: Wenn der Beginn einer Frist auf einen Samstag, Sonntag oder einen gesetzlichen Feiertag fällt, wird diese Frist nicht auf den nächsten Werktag verschoben. Die Sonderregelung gilt nur für das Fristende.\n\nAusgabe (exakt dieses Format, nur Platzhalter ersetzen):\nSomit beginnt die Einspruchsfrist am [START-DATUM] um [START-UHRZEIT] Uhr und dauert [MONATSENDE] Monat und endet am [ENDDATUM] um [END-UHRZEIT] Uhr."
+      - type: "ts"
+        text: "AUFGABE (Zusammenfassung): Fasse den folgenden juristischen Text in einfacher Sprache zusammen (max. 3 Sätze).\n\nTEXT:\n(1) Ergeht ein Verwaltungsakt schriftlich oder elektronisch, so beginnt die Frist für die Einlegung des Einspruchs nur, wenn der Beteiligte über den Einspruch und die Finanzbehörde, bei der er einzulegen ist, deren Sitz und die einzuhaltende Frist in der für den Verwaltungsakt verwendeten Form belehrt worden ist.\n\n(2) Ist die Belehrung unterblieben oder unrichtig erteilt, so ist die Einlegung des Einspruchs nur binnen eines Jahres seit Bekanntgabe des Verwaltungsakts zulässig.\n\nZUSAMMENFASSUNG:\n"
+      - type: "cc"
+        text: "AUFGABE (Dokument erstellen): Erstelle eine Rechtsbehelfsbelehrung (Vorlage), wie sie ein Finanzamt in einem schriftlichen Steuerbescheid verwendet.\n\nMUSS ENTHALTEN:\n- Rechtsbehelf: Einspruch\n- Zuständige Finanzbehörde/Empfangsstelle: <FINANZAMT_NAME>, <FINANZAMT_ADRESSE>\n- Einzuhaltende Frist: 1 Monat nach Bekanntgabe\n- Form der Einlegung: schriftlich oder elektronisch (Platzhalter: <ELEKTRONISCHER_KANAL>, optional)\n- Hinweis: Bei fehlender oder unrichtiger Belehrung ist der Einspruch innerhalb eines Jahres seit Bekanntgabe zulässig\n\nRECHTSBEHELFSBELEHRUNG:\n"
+
+  rental:
+    title: "Wohnraummietrecht (§§ 535-580a BGB)"
+    task: "mixed"
+    prompts:
+      - type: "qa"
+        text: "FRAGE:\nIn meiner Mietwohnung ist die Nutzung wegen eines Mangels erheblich eingeschränkt (z.B. Heizungsausfall). Darf ich die Miete mindern und muss ich das dem Vermieter extra erklären?\n\nANTWORT (mit Gesetz + Begründung):\n"
+      - type: "tc"
+        text: "AUFGABE (Vervollständigung): Ergänze ausschließlich die Platzhalter in den eckigen Klammern. Gib als Ausgabe NUR den vollständig ausgefüllten Text aus.\n\nText:\nWird die Nutzbarkeit der Mietsache erheblich eingeschränkt, kann der Mieter die Miete gemäß § [___] BGB mindern. Entfällt die Nutzbarkeit komplett, ist der Mieter von der Zahlung des Mietzinses befreit (§ [___] BGB). Eine Erklärung gegenüber dem Vermieter ist nicht nötig, da die Minderung sich aus dem Gesetz ergibt (§ [___] BGB)."
+      - type: "ts"
+        text: "AUFGABE (Zusammenfassung): Fasse den folgenden juristischen Text in einfacher Sprache zusammen (max. 3 Sätze).\n\nTEXT:\nAuch während des Mietverhältnisses kann es zu Leistungsstörungen kommen, z.B. wenn Mängel an der Mietsache entstehen. Hierfür haftet der Vermieter gemäß §§ 536 ff. BGB. Wird die Nutzbarkeit der Mietsache erheblich eingeschränkt, kann der Mieter die Miete gemäß § 536 Abs. 1 BGB mindern.\n\nEntfällt die Nutzbarkeit der Mietsache komplett, so ist der Mieter von der Zahlung des Mietzinses komplett befreit (§ 536 Abs. 1 BGB). Eine Erklärung gegenüber dem Vermieter ist nicht nötig, da die Minderung sich aus dem Gesetz ergibt (§ 536 BGB).\n\nZUSAMMENFASSUNG:\n"
+      - type: "cc"
+        text: "AUFGABE (Dokument erstellen): Erstelle ein Mietminderungsschreiben an den Vermieter.\n\nMUSS ENTHALTEN:\n- Betreff: Mietminderung wegen Mangel\n- Beschreibung des Mangels: <MANGEL_BESCHREIBUNG>\n- Beginn der Minderung: <DATUM_BEGINN>\n- Höhe der Minderung: <PROZENT> %\n- Hinweis auf § 536 BGB\n- Aufforderung zur Beseitigung\n- Platzhalter: <NAME>, <ADRESSE>, <DATUM>\n\nSCHREIBEN:\n"
+
+  passenger_rights:
+    title: "Verkehrsrecht (EU-Verordnungen)"
+    task: "mixed"
+    prompts:
+      - type: "qa"
+        text: "FRAGE:\nMein Flug wurde annulliert. Welche Rechte habe ich nach EU-Recht und wie hoch ist die Ausgleichszahlung?\n\nANTWORT (mit Gesetz + Begründung):\n"
+      - type: "tc"
+        text: "AUFGABE (Vervollständigung): Ergänze ausschließlich die Platzhalter in den eckigen Klammern. Gib als Ausgabe NUR den vollständig ausgefüllten Text aus.\n\nText:\nBei Annullierung, Nichtbeförderung oder großer Verspätung haben Fluggäste nach der EU-Fluggastrechte-Verordnung Anspruch auf Ausgleichszahlungen von [___], [___] oder [___] Euro (je nach Flugdistanz) sowie auf Betreuungsleistungen wie Mahlzeiten, Hotel und Transfer."
+      - type: "ts"
+        text: "AUFGABE (Zusammenfassung): Fasse den folgenden juristischen Text in einfacher Sprache zusammen (max. 3 Sätze).\n\nTEXT:\nBei Annullierung, Nichtbeförderung oder großer Verspätung haben Fluggäste nach der EU-Fluggastrechte-Verordnung Anspruch auf Ausgleichszahlungen von 250, 400 oder 600 Euro (je nach Flugdistanz) sowie auf Betreuungsleistungen wie Mahlzeiten, Hotel und Transfer. Sie können außerdem Erstattung des Ticketpreises oder eine anderweitige Beförderung verlangen, soweit keine außergewöhnlichen Umstände vorliegen.\n\nZUSAMMENFASSUNG:\n"
+      - type: "cc"
+        text: "AUFGABE (Dokument erstellen): Erstelle ein Beschwerde-/Forderungsschreiben an eine Fluggesellschaft (Musterformat) wegen Annullierung/Verspätung.\n\nMUSS ENTHALTEN:\n- Betreff: Forderung nach Ausgleichszahlung und Betreuungsleistungen\n- Flugdaten: <FLUGNUMMER>, <DATUM>, <STRECKE>\n- Sachverhalt: <ANNULLIERUNG_ODER_VERSPAETUNG>\n- Forderung: Ausgleichszahlung (250/400/600 Euro je nach Distanz) + ggf. Kosten <KOSTEN_SUMME>\n- Hinweis auf EU-Fluggastrechte-Verordnung (VO (EG) 261/2004)\n- Frist zur Rückmeldung: <FRISTDATUM>\n- Unterschrift: <NAME>\n\nSCHREIBEN:\n"

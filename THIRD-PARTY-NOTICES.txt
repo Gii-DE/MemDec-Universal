@@ -1,0 +1,49 @@
+THIRD-PARTY SOFTWARE AND DATASET NOTICES
+
+MemDec-Universal (https://github.com/Gii-DE/MemDec-Universal) includes third-party software and datasets under the following licenses:
+
+--------------------------------------------------------------------------------
+1. Memory Decoder (Codebase)
+   Copyright (c) 2025 LUMIA-Group (SJTU) / Memory Decoder Authors (see Source)
+   License: Apache License, Version 2.0 (see MemoryDecoder/LICENSE or http://www.apache.org/licenses/LICENSE-2.0)
+   Source: https://doi.org/10.48550/arXiv.2508.09874 / https://github.com/LUMIA-Group/MemoryDecoder
+   
+   Notice: This project incorporates a modified version of MemoryDecoder scripts specifically tailored for KNN datastore creation (Step 3), 
+   MemDec model training (Step 4), and quantitative evaluation (Step 5).
+   
+   Modified Files in /MemoryDecoder:
+   - evaluate_joint.py
+   - train_base.py
+   - train_memdec.py
+   - demo/memDec.py
+   - knn_utils/saveEmbedMulti.py
+   - utils/cal_loss.py
+
+   Summary of Modifications:
+   - Project Integration: Wired the original MemoryDecoder scripts into the MemDec-Universal pipeline via src.utils path/model resolution, a unified config/output layout, and Unsloth opt-out flags (CLI/env).
+   - Model Architecture Support: Extended layer/embedding capture and generation API compatibility to Gemma 3, Qwen 3.5 and SmolLM3 (including multimodal text-stack fallback and eager-attention pinning).
+   - Performance & Memory: Added mixed-precision detection, CPU/GPU memory handling, chunked KL-loss computation, memory-mapped KNN datastore creation, Unsloth bfloat16 training, and bitsandbytes AdamW8bit optimizer.
+   - Correctness & Robustness: Fixed attention-mask propagation in generation, aligned knn_prob/logit tensor shapes, resolved datastore path mismatches, and added optimizer-state validation on checkpoint resume.
+   - Maintenance: Removed unused imports and dead code, and refactored functions to module scope for multiprocessing safety.
+
+   Details for each modified file are available in the MODIFICATION NOTICE header of the files listed above.
+--------------------------------------------------------------------------------
+2. Open Legal Data (Dataset)
+   Copyright (c) Open Legal Data Initiative
+   License: Open Database License (ODbL) v1.0 (Database & Metadata; see https://opendatacommons.org/licenses/odbl/1.0/) / Public Domain (German Court Decisions & Statutes pursuant to § 5 UrhG)
+   Source: https://de.openlegaldata.io / https://huggingface.co/datasets/openlegaldata/court-decisions-germany
+   
+   Notice:
+   - Utilizes official German court decisions, statutes, and decrees in the public domain (§ 5 UrhG).
+   - Dataset collection, structure, processing, and metadata are provided under the Open Database License (ODbL) v1.0.
+   - Dataset is dynamically streamed/fetched via HuggingFace and is not hosted or redistributed within this repository.
+--------------------------------------------------------------------------------
+3. Unsloth (Model Optimization Framework)
+   Copyright (c) Unsloth AI
+   License: Apache License, Version 2.0 (see http://www.apache.org/licenses/LICENSE-2.0)
+   Source: https://unsloth.ai / https://huggingface.co/unsloth
+
+   Notice:
+   - Utilizes Triton kernel optimizations for accelerated training execution.
+   - Dynamically loads Gemma 3 (270M), Qwen 3.5 (0.8B), and SmolLM3 (3B) via Hugging Face without bundling or redistributing model weights.
+--------------------------------------------------------------------------------

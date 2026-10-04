@@ -1,0 +1,16 @@
+accelerate==1.11.0
+bitsandbytes>=0.46.1
+beautifulsoup4>=4.13.0
+datasets==4.3.0
+faiss-cpu==1.15.1
+huggingface_hub==1.31.0
+loguru==0.7.3
+numpy==2.4.6
+pandas==3.0.6
+psutil==7.2.2
+pyarrow==21.0.0
+python-dotenv==1.2.2
+pyyaml==6.0.3
+requests==2.34.2
+tqdm==4.67.1
+transformers==5.17.0
