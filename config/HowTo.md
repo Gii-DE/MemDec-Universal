@@ -38,11 +38,12 @@ MemDec-Universal\config\
    ```bash
    MEMDEC_USECASE='<your_domain>_usecase'    # default: legal_usecase
    ```
-> [!note] EXAMPLE
+> [!TIP]
+> **EXAMPLE**<br>
 > Check <kbd>config/legal_usecase</kbd> folder for inspiration on how a complete use-case setup looks like.
 
 ## <em>System Config-Files</em>
-### <kbd><strong>[`dataset_config.yaml`](/config/custom_usecase/dataset_config.yaml)</strong></kbd>
+### <strong>[`dataset_config.yaml`](/config/custom_usecase/dataset_config.yaml)</strong>
 Declares the raw data sources for your domain, grouped into 3 optional types that can be combined freely. Each source gets a name of your choice, and `pipeline_config.yaml` then lists those names under `steps.step0_data_management.datasets` to select which ones get merged into the corpus:
 1. <kbd>local_files</kbd>: Dataset files placed in the <kbd><your_domain>_usecase/`data`</kbd> folder and processed in `step0_dataset`.
 2. <kbd>datasets</kbd>: Remote dataset files downloaded from a URL and processed in `step0_dataset`.
@@ -56,17 +57,18 @@ Sources name their fields differently, so each dataset entry can define a `field
 - <kbd>meta_date</kbd>: When the entry is from, used for temporal sorting and analysis.
 - <kbd>id</kbd>: A unique identifier per entry, which falls back to the row index if not mapped.
 
-> [!note] EXAMPLE
+> [!TIP]
+> **EXAMPLE**<br>
 > Check <kbd>[legal_usecase/dataset_config.yaml](/config/legal_usecase/dataset_config.yaml)</kbd> for inspiration on how to create your own dataset collection.
 
 ---
-### <kbd><strong>[`pipeline_config.yaml`](/config/custom_usecase/pipeline_config.yaml)</strong></kbd>
+### <strong>[`pipeline_config.yaml`](/config/custom_usecase/pipeline_config.yaml)</strong>
 The file is split into 2 sections:
 - <kbd>pipeline</kbd>: Settings around the corpus being built, like `corpus_name` (the name the merged corpus will carry), `sources_path` (the reference sources the trained MemDec model is checked against), and `models.default_model` (model keyword in `model_config.json` for the base LLM).
 - <kbd>steps</kbd>: Per-step values for steps 0-5 that replace the step's default, like `tokenized_data`, `batch_size`, or trained `checkpoint`.
 
-> [!warning] Note
-> - **Unset parameters** fall back to their built-in defaults, e.g. the commented-out [`#min_text_length:`](custom_usecase/pipeline_config.yaml) resolves to *60*.
+> [!CAUTION]
+> - **Unset parameters** fall back to their built-in defaults, e.g. the commented-out <kbd>[`#min_text_length:`](custom_usecase/pipeline_config.yaml)</kbd> resolves to *60*.
 > - Each step auto-selects `base_model` by evaluating the sources below in order of priority as a **hierarchy system**, using the first value found:
 >
 > <kbd>CLI `--model` → `steps.<step>.base_model` → auto-derived from `tokenized_data` & `checkpoint` → `models.default_model` → .env `MEMDEC_MODEL` → system default `gemma3`</kbd>
@@ -74,25 +76,28 @@ The file is split into 2 sections:
 > The CLI `--model` argument takes precedence, followed by `base_model` set under **steps**, then the model auto-derived from the loaded `tokenized_data` or `checkpoint`, `models.default_model`, the `.env` variable `MEMDEC_MODEL`, and `gemma3` as the built-in fallback
 > - Parameters marked **[FIXED]** in the CLI cannot be changed, such as `knowledge_base_path`, `output_dir`, and `results_dir`; changing those paths requires editing the source code directly!
 
-> [!note] EXAMPLE
+> [!TIP]
+> **EXAMPLE**<br>
 > Check <kbd>[legal_usecase/pipeline_config.yaml](/config/legal_usecase/pipeline_config.yaml)</kbd> for inspiration on how to create your own pipeline orchestration.
 
 ---
-### <kbd><strong>[`sources.json`](/config/custom_usecase/sources.json)</strong></kbd>
+### <strong>[`sources.json`](/config/custom_usecase/sources.json)</strong>
 Optional file that stores reference texts per scenario so `step5_testing` can check whether generated answers stay faithful to your domain material. The **fuzzy score** measures how closely the response wording matches the closest reference text and the **overlap score** measures the share of key terms appearing in both, which supports the human review of the outputs. Its scenario keys must match the scenarios defined in [`test_cases.yaml`](#test_casesyaml), since `step5_testing` loads both files together.
 
-> [!note] EXAMPLE
+> [!TIP]
+> **EXAMPLE**<br>
 > Check <kbd>[legal_usecase/sources.json](/config/legal_usecase/sources.json)</kbd> for inspiration on how to create your own reference sources to check model outputs against.
 
 ---
-### <kbd><strong>[`test_cases.yaml`](/config/custom_usecase/test_cases.yaml)</strong></kbd>
+### <strong>[`test_cases.yaml`](/config/custom_usecase/test_cases.yaml)</strong>
 Defines the **test scenarios** for `step5_testing`, where each scenario has a `title`, a `task` type like `mixed` (all prompt types), `qa` (question answering), `tc` (text completion), `ts` (text summarization), or `cc` (content creation), and a list of **prompt instructions** on which the base model and the MemDec model are compared. 
 
-> [!note] EXAMPLE
+> [!TIP]
+> **EXAMPLE**<br>
 > Check <kbd>[legal_usecase/test_cases.yaml](/config/legal_usecase/test_cases.yaml)</kbd> for inspiration on how to create your own test scenarios.
 
 ---
-### <kbd><strong>[`model_config.json`](/config/model_config.json)</strong></kbd>
+### <strong>[`model_config.json`](/config/model_config.json)</strong>
 The global model registry shared across all use-cases. Each entry maps a keyword like `gemma3`/`qwen3.5`/`smollm3` to a HuggingFace **name**, a **description**, and optional **dstore**/**index** filenames; entries are only added when registering a model. These files are only required by the model that builds the KNN knowledge base in `step3` and trains the MemDec module in `step4` (typically the smallest family member, e.g. `gemma3`'s 270m variant). Larger members like `gemma3-1b` keep `null` and serve only as comparison baselines in `step5_testing` and `step5_evaluation`.
 
 ---
@@ -111,6 +116,5 @@ python -m src.step5_testing
 python -m src.step5_evaluation
 </code></pre>
 
-> [!warning] NOTE
-> All steps resolve their parameters from <kbd>[`pipeline_config.yaml`](/config/custom_usecase/pipeline_config.yaml)</kbd>, where commented-out lines show the system defaults. To change one, uncomment and adjust it in the file or override it via CLI arguments. Run any script with `--help` to list all options.
+> 🛑 All steps resolve their parameters from <kbd>[`pipeline_config.yaml`](/config/custom_usecase/pipeline_config.yaml)</kbd>, where commented-out lines show the system defaults. To change one, uncomment and adjust it in the file or override it via CLI arguments. Run any script with `--help` to list all options.
 </details>
