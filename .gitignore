@@ -1,6 +1,8 @@
 # ============================================================
 # Data & Artifacts (datasets, model weights, outputs, logs)
 # ============================================================
+config/*
+!config/HowTo.md
 dataset/*
 !dataset/.gitkeep
 knowledge_base/*
