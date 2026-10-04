@@ -1,4 +1,4 @@
-# <kbd>`MemDec-Universal`</kbd> <strong><em>Config-Guide</em></strong>
+# `MemDec-Universal` <strong><em>Config-Guide</em></strong>
 This guide explains how to configure the MemDec domain adapter for a custom knowledge domain. Following a plugin approach, each domain lives in its own "use-case" folder under <kbd>MemDec-Universal/`config`</kbd> and is picked up by the pipeline automatically, so the config files alone control its behavior without touching the code. For pipeline internals and initial setup instructions, see <kbd>[`README.md`](../README.md)</kbd>.
 
 ## <em>Directory Structure</em>
