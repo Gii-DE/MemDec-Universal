@@ -103,10 +103,9 @@ The global model registry shared across all use-cases. Each entry maps a keyword
 ---
 <details>
 <summary><kbd><strong>START THE SYSTEM!</strong></kbd></summary>
-Once the configs are set up, every step runs with no arguments because all values resolve from the config files:
+Once configured, all steps run without extra arguments because parameters are automatically resolved from the <strong>config files</strong>:
 
-<pre><code>
-python -m src.step0_dataset
+<pre><code>python -m src.step0_dataset
 python -m src.step0_data_management
 python -m src.step1_cleaning
 python -m src.step2_tokenization
