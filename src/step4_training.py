@@ -60,8 +60,8 @@ class TrainingConfig:
     num_train_epochs: int = 2
     seed: int = 42
     # Training settings
-    max_steps: int = 500    # reduced from 5000 for testing
-    checkpointing_steps: int = 10   # saved checkpoints interval
+    max_steps: int = 1000    # reduced from 5000 for testing
+    checkpointing_steps: int = 50   # saved checkpoints interval
     # Batch size (GPU defaults; CPU fallback)
     batch_size: int = 2
     per_device_train_batch_size: int = 2

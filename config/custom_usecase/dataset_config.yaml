@@ -1,43 +1,63 @@
-# Dataset Config Template for Custom Domain
+# Dataset Config for Custom Domain
+# NOTE: Use at least 10k samples for proper MemDec-training
 
 local_files:      # Local Dataset (already downloaded & placed in data/ folder)
-  # custom_dataset1:
+  # dataset1:
   #   path: "config/custom_usecase/data/dataset1.json"
   #   format: "json"
   #   description: "Custom dataset 1"
+  #   field_mapping:
+  #     text: ["text", "content"]
+  #     meta_category: ["category", "source"]
+  #     meta_date: ["date"]
+  #     id: ["id"]
 
-  # custom_dataset2:
+  # dataset2:
   #   path: "config/custom_usecase/data/dataset2.jsonl"
   #   format: "jsonl"
   #   description: "Custom dataset 2"
+  #   field_mapping:
+  #     text: ["text", "content"]
+  #     meta_category: ["category", "source"]
+  #     meta_date: ["date"]
+  #     id: ["id"]
 
-  # custom_dataset3:
+  # dataset3:
   #   path: "config/custom_usecase/data/dataset3.gz"
   #   format: "gz"
   #   description: "Custom dataset 3"
+  #   field_mapping:
+  #     text: ["text", "content"]
+  #     meta_category: ["category", "source"]
+  #     meta_date: ["date"]
+  #     id: ["id"]
 
 
 datasets:         # URL-based Dataset (for remote downloads)
-  # custom_dataset_small:
+  # dataset_small:
   #   url: "https://example.com/dataset-small.json.gz"
   #   format: "json"
   #   description: "Small subset of custom domain data"
+  #   field_mapping:
+  #     text: ["text", "content"]
+  #     meta_category: ["category", "source"]
+  #     meta_date: ["date"]
+  #     id: ["id"]
 
 
 huggingface:      # HuggingFace Dataset
-  # NOTE: use at least 10k samples for proper MemDec-training
   datasets:
-    # Example:
-    # - dataset_name: "your-org/your-dataset"
+    # - dataset_name: "org/dataset"
     #   split: "train"
-    #   output_name: "custom_dataset"
-    #   description: "Your custom dataset"
-    #   config: null
+    #   output_name: "dataset-name"
+    #   description: "Custom dataset info"
+    #   config: null      # state if given
     #   field_mapping:
     #     text: ["text", "content"]
     #     meta_category: ["category", "source"]
     #     meta_date: ["date"]
     #     id: ["id"]
+  
   
   config_mappings: {}                   # Config mappings
   default_config: null                  # Default config

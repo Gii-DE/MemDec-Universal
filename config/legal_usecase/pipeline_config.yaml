@@ -14,8 +14,8 @@ steps:
       - "cases2026_10k"
   
   step0_dataset:
-    default_dataset: "bverfg_decisions" # for remote downloads (URL-based Dataset)
-    #local_file: "gerdalir_queries"     # for local files (in data/ folder)
+    default_dataset: "bverfg_decisions"         # for remote downloads (URL-based Dataset)
+    #local_file: "gerdalir_queries"             # for local files (in data/ folder)
   
   step1_cleaning:
     hf_config: "cases2026_10k"

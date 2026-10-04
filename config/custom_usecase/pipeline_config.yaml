@@ -10,11 +10,15 @@ pipeline:
 steps:
   step0_data_management:
     datasets:
-      - "your_dataset_1"
-      - "your_dataset_2"
+      - "dataset_1"
+      - "dataset_2"
+      - "dataset_3"
+      - "dataset_small"
+      - "dataset-name"
   
   step0_dataset:
-    #default_dataset: "your_dataset_1"
+    #default_dataset: "dataset_small"                  # for remote downloads (URL-based Dataset)
+    #local_file: "dataset1"                            # for local files (in data/ folder)
   
   step1_cleaning:
     #min_text_length: 60
@@ -33,7 +37,7 @@ steps:
   step3_pretraining:
     tokenized_data: "custom_corpus_tokenized-gemma3"
     # "base_model" is auto-derived from tokenized_data
-    batch_size: 32    # use 8 on CPU/low-VRAM
+    #batch_size: 8
     #seed: 42
     #ncentroids: 2048
     #num_keys_to_add_at_a_time: 100000
@@ -42,25 +46,25 @@ steps:
     #no_unsloth: false
     tokenized_data: "custom_corpus_tokenized-gemma3"
     # "base_model" is auto-derived from tokenized_data
-    max_steps: 1000
-    checkpointing_steps: 50
-    #checkpoint: "step_100"
+    #max_steps: 1000
+    #checkpointing_steps: 50
+    #checkpoint: "step_1000"
     #learning_rate: 1.5e-4
     #k_neighbors: 4
     #alpha: 0.5
     #lmbda: 0.3
     #seed: 42
-    #per_device_train_batch_size: 1
-    #gradient_accumulation_steps: 16
+    #per_device_train_batch_size: 2
+    #gradient_accumulation_steps: 8
   
-  step5_testing:
-    checkpoint: null
+  step5_testing:                # Optional - for testing the trained model
+    #checkpoint: "step_1000"
     # "base_model" is auto-derived from checkpoint
     #base_model: "unsloth/gemma-3-1b-it"  # test with different base model of same family
     #lmbda: 0.3
     #knn_temp: 1.0
-    max_new_tokens: 512
-    repetition_penalty: 1.1
+    #max_new_tokens: 300
+    #repetition_penalty: 1.25
     #seed: 42
     scenarios:
       #- "example_scenario_1"
@@ -73,8 +77,8 @@ steps:
     #save_results: true
     #compare_base: true
   
-  step5_evaluation:
-    checkpoint: null
+  step5_evaluation:             # Optional - for evaluating the trained model
+    #checkpoint: "step_1000"
     tokenized_data: "custom_corpus_tokenized-gemma3"
     # "base_model" is auto-derived from tokenized_data/checkpoint
     #base_model: "unsloth/gemma-3-1b-it"  # test with different base model of same family
@@ -82,7 +86,7 @@ steps:
     max_examples: 100
     #lmbda: 0.3
     #knn_temp: 1.0
-    batch_size: 4
+    #batch_size: 2
     #seed: 42
     #save_results: true
     #compare_base: true
