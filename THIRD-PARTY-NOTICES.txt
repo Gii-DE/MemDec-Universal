@@ -9,10 +9,9 @@ MemDec-Universal (https://github.com/Gii-DE/MemDec-Universal) includes third-par
    Source: https://doi.org/10.48550/arXiv.2508.09874 / https://github.com/LUMIA-Group/MemoryDecoder
    
    Notice: This project incorporates a modified version of MemoryDecoder scripts specifically tailored for KNN datastore creation (Step 3), 
-   MemDec model training (Step 4), and quantitative evaluation (Step 5).
+   MemDec model training (Step 4), and generation testing (Step 5).
    
    Modified Files in /MemoryDecoder:
-   - evaluate_joint.py
    - train_base.py
    - train_memdec.py
    - demo/memDec.py
@@ -23,8 +22,8 @@ MemDec-Universal (https://github.com/Gii-DE/MemDec-Universal) includes third-par
    - Project Integration: Wired the original MemoryDecoder scripts into the MemDec-Universal pipeline via src.utils path/model resolution, a unified config/output layout, and Unsloth opt-out flags (CLI/env).
    - Model Architecture Support: Extended layer/embedding capture and generation API compatibility to Gemma 3, Qwen 3.5 and SmolLM3 (including multimodal text-stack fallback and eager-attention pinning).
    - Performance & Memory: Added mixed-precision detection, CPU/GPU memory handling, chunked KL-loss computation, memory-mapped KNN datastore creation, Unsloth bfloat16 training, and bitsandbytes AdamW8bit optimizer.
-   - Correctness & Robustness: Fixed attention-mask propagation in generation, aligned knn_prob/logit tensor shapes, resolved datastore path mismatches, and added optimizer-state validation on checkpoint resume.
-   - Maintenance: Removed unused imports and dead code, and refactored functions to module scope for multiprocessing safety.
+   - Correctness & Robustness: Fixed attention-mask propagation in generation, aligned knn_prob/logit tensor shapes, resolved datastore path mismatches, added optimizer-state validation on checkpoint resume, and auto-derived the epoch count needed to reach max training steps.
+   - Maintenance: Removed unused imports and dead code.
 
    Details for each modified file are available in the MODIFICATION NOTICE header of the files listed above.
 --------------------------------------------------------------------------------

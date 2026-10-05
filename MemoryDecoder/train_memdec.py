@@ -32,6 +32,7 @@
 # - CLI & UX: Added --no_unsloth/--no-unsloth flag (or NO_UNSLOTH env var) to skip the unsloth import entirely; filtered unsloth deprecation warnings
 # - Robustness: Added cleanup_old_checkpoints(), robust checkpoint resumption, has_knn warning fallback, and tensor-guarded batch device moves (knn_probs=None fast path)
 # - Robustness: Added optimizer-state compatibility validation on checkpoint resume (torch 'exp_avg' vs bitsandbytes 'state1') with automatic momentum reset to prevent KeyError at first optimizer.step()
+# - Robustness: Auto-derive num_train_epochs so the epoch loop can always reach max_train_steps
 #
 # The original code is available at: 
 # https://github.com/LUMIA-Group/MemoryDecoder
@@ -452,6 +453,12 @@ def main(progress_bar=None):
     num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
     if args.max_train_steps is None:
         args.max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
+    else:
+        min_epochs = math.ceil(args.max_train_steps / num_update_steps_per_epoch) + 1
+        if args.num_train_epochs < min_epochs:
+            logger.info(f"Auto-raising num_train_epochs {args.num_train_epochs} -> {min_epochs} "
+                        f"({num_update_steps_per_epoch} steps/epoch needed for max_train_steps={args.max_train_steps})")
+            args.num_train_epochs = min_epochs
 
     lr_scheduler = get_scheduler(
         name=args.lr_scheduler_type,

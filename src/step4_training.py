@@ -13,7 +13,7 @@ class DummyVideoReader:
     def __init__(self, *args, **kwargs): pass
 torchvision.io.VideoReader = DummyVideoReader
 # ----------------------------------------------------------------------
-import os, sys, gc, time, argparse, torch
+import os, sys, gc, math, time, argparse, torch
 from dataclasses import dataclass
 from typing import Optional, List
 from pathlib import Path
@@ -57,7 +57,7 @@ class TrainingConfig:
     lr_scheduler_type: str = "cosine"
     weight_decay: float = 0.01
     warmup_steps: int = 50
-    num_train_epochs: int = 2
+    num_train_epochs: int = 2   # auto-raised in train_memdec when too small for max_steps
     seed: int = 42
     # Training settings
     max_steps: int = 1000    # reduced from 5000 for testing
@@ -201,8 +201,8 @@ def validate_dataset(dataset_path: str) -> None:
         dataset_path: Path to the dataset directory
 
     Returns:
-        None
-
+        int: Number of examples in the dataset
+    
     Raises:
         ValueError: If required columns are missing
     """
@@ -214,6 +214,7 @@ def validate_dataset(dataset_path: str) -> None:
         raise ValueError(f"Missing required columns in dataset: {missing_columns}")
     dataset.set_format(type='torch', columns=list(required_columns))
     logger.info(f"Dataset validated with {len(dataset)} examples")
+    return len(dataset)
 
 
 # --- MAIN ---
@@ -246,7 +247,12 @@ def main(config: TrainingConfig) -> None:
         else:
             logger.info(f"Base model matches dataset tokenizer: {config.base_model}")
     train_file = prepare_dataset(config)
-    validate_dataset(config.tokenized_data_path)
+    num_examples = validate_dataset(config.tokenized_data_path)
+    steps_per_epoch = math.ceil(math.ceil(num_examples / config.per_device_train_batch_size) / config.gradient_accumulation_steps)
+    min_epochs = math.ceil(config.max_steps / steps_per_epoch) + 1 if steps_per_epoch else 0
+    if steps_per_epoch and config.num_train_epochs < min_epochs:
+        logger.info(f"num_train_epochs={config.num_train_epochs} will be auto-raised to ~{min_epochs} in train_memdec "
+                    f"({steps_per_epoch} steps/epoch needed for max_steps={config.max_steps})")
     args = setup_training_args(config, train_file)
     original_argv = sys.argv.copy()
     start_time = time.time()
@@ -330,6 +336,7 @@ def parse_arguments() -> argparse.Namespace:
     config_alpha = get_pipeline_value("steps.step4_training.alpha", default_config.alpha)
     config_lmbda = get_pipeline_value("steps.step4_training.lmbda", default_config.lmbda)
     config_no_unsloth = get_pipeline_value("steps.step4_training.no_unsloth", default_config.no_unsloth)
+    config_num_train_epochs = get_pipeline_value("steps.step4_training.num_train_epochs", default_config.num_train_epochs)
     parser = argparse.ArgumentParser(description='Train the MemDec-Module model')
 
     path_group = parser.add_argument_group('Path Arguments')
@@ -345,6 +352,8 @@ def parse_arguments() -> argparse.Namespace:
                          help=f'Maximum number of training steps [default: {config_max_steps}]')
     train_group.add_argument('--checkpointing-steps', type=int, default=config_checkpointing_steps,
                          help=f'Save checkpoint every N steps [default: {config_checkpointing_steps}]')
+    train_group.add_argument('--num-train-epochs', type=int, default=config_num_train_epochs,
+                         help=f'Number of training epochs (upper loop bound; --max-steps caps updates) [default: {config_num_train_epochs}]')
     train_group.add_argument('--batch-size', type=int, default=config_batch_size,
                          help=f'Batch size for training [default: {config_batch_size}]')
     train_group.add_argument('--per-device-train-batch-size', type=int, default=config_per_device_train_batch_size,
@@ -374,8 +383,6 @@ def parse_arguments() -> argparse.Namespace:
                          help=f'[FIXED] Weight decay [default: {default_config.weight_decay}]')
     train_group.add_argument('--warmup-steps', type=int, default=default_config.warmup_steps,
                          help=f'[FIXED] Number of warmup steps [default: {default_config.warmup_steps}]')
-    train_group.add_argument('--num-train-epochs', type=int, default=default_config.num_train_epochs,
-                         help=f'[FIXED] Number of training epochs [default: {default_config.num_train_epochs}]')
     train_group.add_argument('--lr-scheduler-type', type=str, default=default_config.lr_scheduler_type,
                          help=f'[FIXED] Learning rate scheduler type [default: {default_config.lr_scheduler_type}]')
     args = parser.parse_args()
@@ -389,8 +396,6 @@ def parse_arguments() -> argparse.Namespace:
         parser.error(f"--weight-decay is fixed to '{default_config.weight_decay}' and cannot be changed via CLI.")
     if args.warmup_steps != default_config.warmup_steps:
         parser.error(f"--warmup-steps is fixed to '{default_config.warmup_steps}' and cannot be changed via CLI.")
-    if args.num_train_epochs != default_config.num_train_epochs:
-        parser.error(f"--num-train-epochs is fixed to '{default_config.num_train_epochs}' and cannot be changed via CLI.")
     if args.lr_scheduler_type != default_config.lr_scheduler_type:
         parser.error(f"--lr-scheduler-type is fixed to '{default_config.lr_scheduler_type}' and cannot be changed via CLI.")
     return args
@@ -423,6 +428,7 @@ if __name__ == '__main__':
         seed=args.seed,
         checkpointing_steps=args.checkpointing_steps,
         max_steps=args.max_steps,
+        num_train_epochs=args.num_train_epochs,
         no_unsloth=args.no_unsloth,
     )
     main(config)

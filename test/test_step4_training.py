@@ -190,6 +190,15 @@ class TestSetupTrainingArgs(unittest.TestCase):
         args_off = setup_training_args(TrainingConfig(no_unsloth=False), train_file)
         self.assertNotIn("--no_unsloth", args_off)
 
+    @patch('src.step4_training.get_knowledge_base_paths')
+    @patch('src.step4_training.logger', create=True)
+    def test_setup_training_args_num_train_epochs(self, mock_logger, mock_kb_paths):
+        """Test custom num_train_epochs is passed through to the training args"""
+
+        mock_kb_paths.return_value = {'dstore': '/test/dstore', 'index': '/test/index'}
+        args = setup_training_args(TrainingConfig(num_train_epochs=25), "/test/train.json")
+        self.assertIn("--num_train_epochs=25", args)
+
 
 class TestValidateDataset(unittest.TestCase):
     """Test dataset validation"""
@@ -217,9 +226,10 @@ class TestValidateDataset(unittest.TestCase):
 
         mock_dataset = MagicMock()
         mock_dataset.column_names = {'input_ids', 'attention_mask', 'labels'}
-        mock_dataset.__len__ = lambda self: 100
+        mock_dataset.__len__.return_value = 100
         mock_load.return_value = mock_dataset
-        validate_dataset(self.temp_dir)
+        result = validate_dataset(self.temp_dir)
+        self.assertEqual(result, 100)
         mock_dataset.set_format.assert_called_once()
         mock_logger.info.assert_called()
     
