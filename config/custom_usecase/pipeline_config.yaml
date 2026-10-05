@@ -55,7 +55,7 @@ steps:
     #alpha: 0.5
     #lmbda: 0.3
     #seed: 42
-    #per_device_train_batch_size: 2
+    #per_device_train_batch_size: 2   # 1 on CPU, 2 on GPU
     #gradient_accumulation_steps: 8
   
   step5_testing:                # Optional - for testing the trained model
