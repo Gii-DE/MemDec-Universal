@@ -17,7 +17,7 @@ logger = get_logger('0_data_management')
 PROJECT_ROOT = Path(__file__).parent.parent
 DATA_DIR = PROJECT_ROOT / "dataset"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-CORPUS_NAME = get_pipeline_value("pipeline.corpus_name", "legal_corpus")
+CORPUS_NAME = get_pipeline_value("pipeline.corpus_name")
 
 
 # --- HELPERS ---
@@ -184,15 +184,19 @@ def main(datasets: List[str], output_dir: str = None, corpus_name: str = None) -
         datasets: List of dataset names or paths to process
         output_dir: Directory to save the combined dataset (if None, loads from config)
         corpus_name: Name of the corpus used for the output dir default and the
-            index file (if None, loads pipeline.corpus_name from config)
+            index file (if None, falls back to pipeline.corpus_name from config;
+            required if neither is set)
     
     Returns:
         None
     
     Raises:
-        SystemExit: If an error occurs during processing
+        SystemExit: If an error occurs during processing or no corpus name is configured
     """
     corpus_name = corpus_name or CORPUS_NAME
+    if corpus_name is None:
+        logger.error("❌ No corpus name configured: set pipeline.corpus_name in pipeline_config.yaml or pass --corpus-name")
+        raise SystemExit(1)
     if output_dir is None:
         output_dir = get_pipeline_value("steps.step0_data_management.default_output_dir", f"dataset/{corpus_name}")
     log_blank_line(logger)
@@ -255,7 +259,8 @@ def parse_arguments() -> argparse.Namespace:
     )
     config_datasets = get_pipeline_value("steps.step0_data_management.datasets", [])
     parser.add_argument("--corpus-name", type=str, default=None,
-                        help=f"Name of the corpus (default output dir and index file) [default: {CORPUS_NAME}]")
+                        help="Corpus name for the default output dir and <corpus>_index.json "
+                             f"[default: pipeline.corpus_name = {CORPUS_NAME or 'unset — flag required'}]")
     parser.add_argument("datasets", nargs="*", default=config_datasets,
                         help=f"Names or paths of the datasets to combine [default: {config_datasets}]")
     parser.add_argument("--output-dir", type=str, default=None,
