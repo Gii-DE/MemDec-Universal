@@ -35,15 +35,19 @@ logger = get_logger('4_training')
 # --- CONFIG ---
 from src.utils import resolve_base_model, get_model_config, get_knowledge_base_paths, get_dataset_tokenizer_model, normalize_model_name, extract_model_identifier, PROJECT_ROOT, DATA_DIR, KNOWLEDGE_BASE_DIR, OUTPUT_DIR
 
-CORPUS_NAME = get_pipeline_value("pipeline.corpus_name", "legal_corpus")
-TOKENIZED_DATA_DIR = DATA_DIR / get_pipeline_value("steps.step3_pretraining.tokenized_data", f"{CORPUS_NAME}_tokenized")
+CORPUS_NAME = get_pipeline_value("pipeline.corpus_name")
+TOKENIZED_DATA_NAME = get_pipeline_value(
+    "steps.step3_pretraining.tokenized_data",
+    f"{CORPUS_NAME}_tokenized" if CORPUS_NAME else None
+)
+TOKENIZED_DATA_DIR = DATA_DIR / TOKENIZED_DATA_NAME if TOKENIZED_DATA_NAME else None
 
 @dataclass
 class TrainingConfig:
     """Configuration class for training parameters."""
     # Paths
     base_model: str = None
-    tokenized_data_path: str = str(TOKENIZED_DATA_DIR)
+    tokenized_data_path: Optional[str] = str(TOKENIZED_DATA_DIR) if TOKENIZED_DATA_DIR else None
     knn_datastore_path: str = str(KNOWLEDGE_BASE_DIR)
     output_dir: str = str(OUTPUT_DIR)
     checkpoint_dir: Optional[str] = None
@@ -386,6 +390,8 @@ def parse_arguments() -> argparse.Namespace:
     train_group.add_argument('--lr-scheduler-type', type=str, default=default_config.lr_scheduler_type,
                          help=f'[FIXED] Learning rate scheduler type [default: {default_config.lr_scheduler_type}]')
     args = parser.parse_args()
+    if not args.tokenized_data:
+        parser.error("tokenized_data is required: pass it or set steps.step4_training.tokenized_data / pipeline.corpus_name in pipeline_config.yaml")
     if args.knn_datastore_path != default_config.knn_datastore_path:
         parser.error(f"--knn-datastore-path is fixed to '{default_config.knn_datastore_path}' and cannot be changed via CLI.")
     if args.output_dir != default_config.output_dir:

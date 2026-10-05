@@ -13,6 +13,7 @@ torchvision.io.VideoReader = DummyVideoReader
 import argparse, torch, pyarrow as pa
 from tqdm import tqdm
 from pathlib import Path
+from typing import Optional
 from dataclasses import dataclass
 from datasets import load_from_disk
 from accelerate import Accelerator
@@ -37,18 +38,19 @@ except Exception:
 
 # --- CONFIG ---
 from src.utils import cleanup_temp_files, get_pipeline_value, get_default_model, resolve_base_model, get_model_config, _resolve_named_path, setup_device, cleanup_qwen_config, get_dataset_tokenizer_model, normalize_model_name, matches_current_model, extract_model_identifier, PROJECT_ROOT, DATA_DIR, KNOWLEDGE_BASE_DIR, MODEL_CONFIG_FILE
-CORPUS_NAME = get_pipeline_value("pipeline.corpus_name", "legal_corpus")
-TOKENIZED_DATA_DIR = DATA_DIR / get_pipeline_value(
-    "steps.step3_pretraining.tokenized_data", 
-    f"{CORPUS_NAME}_tokenized-{extract_model_identifier(get_default_model())}"
+CORPUS_NAME = get_pipeline_value("pipeline.corpus_name")
+TOKENIZED_DATA_NAME = get_pipeline_value(
+    "steps.step3_pretraining.tokenized_data",
+    f"{CORPUS_NAME}_tokenized-{extract_model_identifier(get_default_model())}" if CORPUS_NAME else None
 )
+TOKENIZED_DATA_DIR = DATA_DIR / TOKENIZED_DATA_NAME if TOKENIZED_DATA_NAME else None
 
 @dataclass
 class PretrainConfig:
     """Configuration class for pretraining parameters."""
     # Paths & LLM Model
     base_model: str = None
-    tokenized_data_path: str = TOKENIZED_DATA_DIR
+    tokenized_data_path: Optional[str] = TOKENIZED_DATA_DIR
     knn_datastore_path: str = KNOWLEDGE_BASE_DIR
     # Training settings
     batch_size: int = 8
@@ -423,7 +425,7 @@ def parse_arguments() -> argparse.Namespace:
         config_tokenized_data = early_args.tokenized_data
     else:
         try:
-            config_tokenized_data = get_pipeline_value("steps.step3_pretraining.tokenized_data", None)
+            config_tokenized_data = get_pipeline_value("steps.step3_pretraining.tokenized_data", None) or TOKENIZED_DATA_DIR
         except Exception:
             config_tokenized_data = None
     # Determine base_model: CLI > step config > tokenized data > pipeline default > env
@@ -471,6 +473,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('--probe', type=int, default=default_config.probe,
                        help=f'[FIXED] Number of probes for KNN [default: {default_config.probe}]')
     args = parser.parse_args()
+    if not args.tokenized_data:
+        parser.error("tokenized_data is required: pass it or set steps.step3_pretraining.tokenized_data / pipeline.corpus_name in pipeline_config.yaml")
     if args.knn_datastore_path != default_config.knn_datastore_path:
         parser.error(f"--knn-datastore-path is fixed to '{default_config.knn_datastore_path}' and cannot be changed via CLI.")
     if args.max_length != default_config.max_length:

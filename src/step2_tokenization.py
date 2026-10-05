@@ -17,8 +17,9 @@ logger = get_logger('2_tokenization')
 
 # --- CONFIG ---
 from src.utils import cleanup_temp_files, get_model_config, resolve_base_model, PROJECT_ROOT, DATA_DIR
-CORPUS_NAME = get_pipeline_value("pipeline.corpus_name", "legal_corpus")
-CLEANED_DATA_DIR = DATA_DIR / get_pipeline_value("steps.step2_tokenization.dataset_cleaned", CORPUS_NAME)
+CORPUS_NAME = get_pipeline_value("pipeline.corpus_name")
+DATASET_CLEANED = get_pipeline_value("steps.step2_tokenization.dataset_cleaned", CORPUS_NAME)
+CLEANED_DATA_DIR = DATA_DIR / DATASET_CLEANED if DATASET_CLEANED else None
 
 
 # --- HELPERS ---
@@ -249,7 +250,7 @@ def save_train_test_json(
 
 # --- MAIN ---
 def main(
-    dataset_cleaned: str, 
+    dataset_cleaned: Optional[str], 
     base_model: str = None, 
     num_workers: Optional[int] = None,
     train_split: float = 0.8
@@ -258,14 +259,21 @@ def main(
     Main function to tokenize the locally cleaned dataset and saves it as Arrow & JSON files.
     
     Args:
-        dataset_cleaned: Name of the cleaned dataset to tokenize
+        dataset_cleaned: Name of the cleaned dataset to tokenize (required; falls back
+            to steps.step2_tokenization.dataset_cleaned or pipeline.corpus_name via CLI)
         base_model: Model to use for tokenization (default: None)
         num_workers: Number of workers for tokenization (default: None)
         train_split: Fraction of data to use for training (default: 0.8)
     
     Returns:
         None
+    
+    Raises:
+        SystemExit: If no dataset name is provided
     """
+    if dataset_cleaned is None:
+        logger.error("❌ No cleaned dataset specified: pass <dataset_cleaned> or set steps.step2_tokenization.dataset_cleaned / pipeline.corpus_name in pipeline_config.yaml")
+        raise SystemExit(1)
     cleaned_path = DATA_DIR / dataset_cleaned
     model_keyword = extract_model_identifier(base_model)
     tokenized_path = DATA_DIR / f"{dataset_cleaned}_tokenized-{model_keyword}"
@@ -352,7 +360,7 @@ def parse_arguments() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(description="Tokenize cleaned dataset for training")
     config_base_model = resolve_base_model(step_config_key="steps.step2_tokenization")
-    config_dataset_cleaned = get_pipeline_value("steps.step2_tokenization.dataset_cleaned", None)
+    config_dataset_cleaned = get_pipeline_value("steps.step2_tokenization.dataset_cleaned", CORPUS_NAME)
     config_train_split = get_pipeline_value("steps.step2_tokenization.train_test_split", 0.8)
     config_num_workers = get_pipeline_value("steps.step2_tokenization.num_workers", 2)
     parser.add_argument("--model", default=config_base_model,
@@ -363,7 +371,10 @@ def parse_arguments() -> argparse.Namespace:
                         help=f"Train/test split ratio [default: {config_train_split}]")
     parser.add_argument("--num-workers", type=int, default=config_num_workers, 
                         help=f"Number of worker processes [default: {config_num_workers}]")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.dataset_cleaned is None:
+        parser.error("dataset_cleaned is required: pass it or set steps.step2_tokenization.dataset_cleaned / pipeline.corpus_name in pipeline_config.yaml")
+    return args
 
 
 if __name__ == '__main__':

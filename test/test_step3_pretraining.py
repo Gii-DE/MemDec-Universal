@@ -426,6 +426,16 @@ class TestEdgeCases(unittest.TestCase):
         )
         self.assertEqual(config.tokenized_data_path, "")
         self.assertEqual(config.knn_datastore_path, "")
+
+    @patch('sys.argv', ['step3_pretraining'])
+    @patch('src.step3_pretraining.TOKENIZED_DATA_DIR', None)
+    @patch('src.step3_pretraining.get_pipeline_value', lambda key, default=None: default)
+    def test_parse_args_missing_tokenized_data_errors(self):
+        """Test parser.error (SystemExit) when no tokenized dataset can be resolved"""
+
+        from src.step3_pretraining import parse_arguments
+        with self.assertRaises(SystemExit):
+            parse_arguments()
     
     def test_device_selection(self):
         """Test device is not stored in config (selected at runtime via setup_device)"""

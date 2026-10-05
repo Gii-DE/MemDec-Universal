@@ -419,6 +419,27 @@ class TestEdgeCases(unittest.TestCase):
                 main(dataset_cleaned="", base_model="")
         mock_logger.error.assert_called()
 
+    @patch('src.step2_tokenization.logger')
+    def test_main_missing_dataset_cleaned_raises_systemexit(self, mock_logger):
+        """Test that a missing dataset_cleaned name aborts with SystemExit"""
+
+        with self.assertRaises(SystemExit):
+            main(dataset_cleaned=None, base_model="test-model")
+        mock_logger.error.assert_called()
+        error_messages = [str(c) for c in mock_logger.error.call_args_list]
+        self.assertTrue(any("dataset" in msg.lower() for msg in error_messages),
+                        "Logger should report the missing dataset name")
+
+    @patch('sys.argv', ['step2_tokenization'])
+    @patch('src.step2_tokenization.CORPUS_NAME', None)
+    @patch('src.step2_tokenization.get_pipeline_value', lambda key, default=None: default)
+    def test_parse_args_missing_dataset_cleaned_errors(self):
+        """Test parser.error (SystemExit) when no cleaned dataset can be resolved"""
+
+        from src.step2_tokenization import parse_arguments
+        with self.assertRaises(SystemExit):
+            parse_arguments()
+
     @patch('src.step2_tokenization.initialize_tokenizer')
     @patch('src.step2_tokenization.save_train_test_json')
     @patch('src.step2_tokenization.tokenize_dataset')

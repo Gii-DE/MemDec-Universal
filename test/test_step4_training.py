@@ -337,6 +337,17 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(config.knn_datastore_path, "")
         self.assertEqual(config.output_dir, "")
 
+    @patch('sys.argv', ['step4_training'])
+    @patch('src.step4_training.get_pipeline_value', lambda key, default=None: default)
+    @patch('src.step4_training.TrainingConfig')
+    def test_parse_args_missing_tokenized_data_errors(self, mock_config_cls):
+        """Test parser.error (SystemExit) when no tokenized dataset can be resolved"""
+
+        mock_config_cls.return_value = TrainingConfig(tokenized_data_path=None)
+        from src.step4_training import parse_arguments
+        with self.assertRaises(SystemExit):
+            parse_arguments()
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
