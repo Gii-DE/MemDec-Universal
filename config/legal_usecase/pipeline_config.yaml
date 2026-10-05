@@ -47,14 +47,14 @@ steps:
     max_steps: 1000
     checkpointing_steps: 50
     #checkpoint: "step_100"
-    #num_train_epochs: 23
+    #num_train_epochs: 2              # capped by max_steps (auto-raised if too few)
     #learning_rate: 1.5e-4
     #k_neighbors: 4
     #alpha: 0.5
     #lmbda: 0.3
     #seed: 42
-    #per_device_train_batch_size: 4
-    #gradient_accumulation_steps: 4
+    per_device_train_batch_size: 4    # 1 on CPU, 2 on GPU
+    gradient_accumulation_steps: 4
   
   step5_testing:
     checkpoint: "step_1000"
