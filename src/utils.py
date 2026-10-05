@@ -606,6 +606,18 @@ def resolve_base_model(
     return full_name
 
 
+def _clean_model_string(s: str) -> str:
+    """Lowercase and strip separators (. _ - /) for normalized model-string comparison.
+    
+    Args:
+        s: String to clean
+        
+    Returns:
+        Cleaned string
+    """
+    return s.lower().replace('.', '').replace('_', '').replace('-', '').replace('/', '')
+
+
 def extract_model_identifier(input_string: str, return_default: bool = True) -> str | None:
     """
     Extract the model identifier (gemma3/qwen3.5/smollm3) from various input formats.
@@ -626,6 +638,7 @@ def extract_model_identifier(input_string: str, return_default: bool = True) -> 
     if not input_string:
         return get_default_model() if return_default else None
     input_lower = input_string.lower()
+    clean_input = _clean_model_string(input_lower)
     model_keywords = get_model_keywords()
     if MODEL_CONFIG_FILE.exists():
         try:
@@ -636,14 +649,19 @@ def extract_model_identifier(input_string: str, return_default: bool = True) -> 
             for model_key, model_data in models.items():
                 if model_data["name"].lower() == input_lower:
                     return model_key
-                if model_key.lower() in input_lower or model_data["name"].lower() in input_lower:
+            for model_key, model_data in sorted(
+                    models.items(),
+                    key=lambda kv: len(_clean_model_string(kv[0])),
+                    reverse=True):
+                clean_key  = _clean_model_string(model_key)
+                clean_name = _clean_model_string(model_data["name"])
+                if (clean_key and clean_key in clean_input) or \
+                        (clean_name and clean_name in clean_input):
                     return model_key
         except Exception:
             pass
-    clean_input = input_lower.replace('.', '').replace('_', '').replace('-', '')
-    for kw in model_keywords:
-        clean_kw = kw.lower().replace('.', '').replace('_', '').replace('-', '')
-        if clean_kw in clean_input:
+    for kw in sorted(model_keywords, key=lambda k: len(_clean_model_string(k)), reverse=True):
+        if _clean_model_string(kw) in clean_input:
             return kw
     if "gemma" in input_lower:
         return "gemma3"

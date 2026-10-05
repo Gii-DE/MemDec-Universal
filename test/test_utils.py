@@ -15,6 +15,8 @@ from src.utils import (
     get_default_model,
     set_default_model,
     get_model_config,
+    get_model_full_name,
+    extract_model_identifier,
     get_logger,
     resolve_base_model,
     project_rel,
@@ -360,6 +362,49 @@ class TestEdgeCases(unittest.TestCase):
 
         device = setup_device()
         self.assertIsInstance(device, torch.device)
+
+
+class TestExtractModelIdentifier(unittest.TestCase):
+    """Test keyword extraction from model names, variants and paths"""
+
+    def test_exact_key_match(self):
+        """Exact config keys resolve to themselves"""
+
+        self.assertEqual(extract_model_identifier("gemma3"), "gemma3")
+        self.assertEqual(extract_model_identifier("gemma3-1b"), "gemma3-1b")
+        self.assertEqual(extract_model_identifier("qwen3.5-2b"), "qwen3.5-2b")
+
+    def test_full_hf_name_match(self):
+        """Full HuggingFace names resolve to their config key"""
+
+        self.assertEqual(extract_model_identifier("unsloth/gemma-3-270m-it"), "gemma3")
+        self.assertEqual(extract_model_identifier("unsloth/gemma-3-1b-it"), "gemma3-1b")
+        self.assertEqual(extract_model_identifier("unsloth/SmolLM3-3B"), "smollm3")
+
+    def test_normalized_variant_resolves_specific_key(self):
+        """HF-style variants without org prefix resolve to the specific key, not the family"""
+
+        # Regression: 'gemma-3-1b-it' previously fell through to 'gemma3'
+        self.assertEqual(extract_model_identifier("gemma-3-1b-it"), "gemma3-1b")
+        self.assertEqual(extract_model_identifier("qwen-3.5-2b"), "qwen3.5-2b")
+        self.assertEqual(extract_model_identifier("SmolLM2-1.7B-Instruct"), "smollm2-1.7b")
+
+    def test_family_key_still_resolves(self):
+        """Family-level inputs still resolve to the family key"""
+
+        self.assertEqual(extract_model_identifier("gemma-3-270m-it"), "gemma3")
+        self.assertEqual(extract_model_identifier("unsloth/Qwen3.5-0.8B"), "qwen3.5")
+
+    def test_unknown_returns_none_when_no_default(self):
+        """Unresolvable input returns None when return_default=False"""
+
+        self.assertIsNone(extract_model_identifier("totally-unrelated-xyz", return_default=False))
+
+    def test_get_model_full_name_variant(self):
+        """get_model_full_name resolves normalized variants to the canonical HF name"""
+
+        self.assertEqual(get_model_full_name("gemma-3-1b-it"), "unsloth/gemma-3-1b-it")
+        self.assertEqual(get_model_full_name("gemma3"), "unsloth/gemma-3-270m-it")
 
 
 class TestResolveBaseModel(unittest.TestCase):
