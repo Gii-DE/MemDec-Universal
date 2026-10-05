@@ -57,7 +57,7 @@ class TrainingConfig:
     alpha: float = 0.5
     lmbda: float = 0.3      # affects tests & evaluation
     # Training params
-    max_steps: int = 1000    # reduced from 5000 for testing
+    max_steps: int = 1500    # reduced from 5000 for testing
     num_train_epochs: int = 2   # auto-raised in train_memdec when too small for max_steps
     checkpointing_steps: int = 50   # saved checkpoints interval
     batch_size: int = 2    # GPU default; CPU fallback
