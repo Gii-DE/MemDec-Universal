@@ -21,12 +21,14 @@ steps:
     #local_file: "dataset1"                            # for local files (in data/ folder)
   
   step1_cleaning:
+    # --- Dataset selection ---
+    #hf_dataset: null
+    hf_config: null
+    # --- Quality thresholds ---
     #min_text_length: 60
     #min_alpha_ratio: 0.5
     #chunk_size: 5000
     #check_duplicates: true
-    hf_config: null
-    #hf_dataset: null
   
   step2_tokenization:
     dataset_cleaned: "custom_corpus"
@@ -46,27 +48,32 @@ steps:
     #no_unsloth: false
     tokenized_data: "custom_corpus_tokenized-gemma3"
     # "base_model" is auto-derived from tokenized_data
-    #max_steps: 1000
-    #checkpointing_steps: 50
     #checkpoint: "step_1000"
-    #num_train_epochs: 2              # capped by max_steps (auto-raised if too few)
-    #learning_rate: 1.5e-4
+    # --- MemDec params ---
     #k_neighbors: 4
     #alpha: 0.5
     #lmbda: 0.3
-    #seed: 42
+    # --- Training params ---
+    #max_steps: 1000
+    #checkpointing_steps: 50
+    #num_train_epochs: 2              # capped by max_steps (auto-raised if too few)
     #per_device_train_batch_size: 2   # 1 on CPU, 2 on GPU
     #gradient_accumulation_steps: 8
+    #learning_rate: 1.5e-4
+    #seed: 42
   
   step5_testing:                # Optional - for testing the trained model
     #checkpoint: "step_1000"
     # "base_model" is auto-derived from checkpoint
     #base_model: "unsloth/gemma-3-1b-it"  # test with different base model of same family
+    # --- MemDec params ---
     #lmbda: 0.3
     #knn_temp: 1.0
+    # --- Generation params ---
     #max_new_tokens: 300
     #repetition_penalty: 1.25
     #seed: 42
+    # --- Prompt selection ---
     scenarios:
       #- "example_scenario_1"
       #- "example_scenario_2"
@@ -75,6 +82,7 @@ steps:
       #- "completion"
       #- "summarization"
       #- "content_creation"
+    # --- Output ---
     #save_results: true
     #compare_base: true
   
@@ -83,11 +91,14 @@ steps:
     tokenized_data: "custom_corpus_tokenized-gemma3"
     # "base_model" is auto-derived from tokenized_data/checkpoint
     #base_model: "unsloth/gemma-3-1b-it"  # test with different base model of same family
-    #split: "test"
-    max_examples: 100
+    # --- MemDec params ---
     #lmbda: 0.3
     #knn_temp: 1.0
+    # --- Eval params ---
+    #split: "test"
+    max_examples: 100
     #batch_size: 2
     #seed: 42
+    # --- Output ---
     #save_results: true
     #compare_base: true

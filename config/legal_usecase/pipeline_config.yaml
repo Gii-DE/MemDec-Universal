@@ -19,8 +19,10 @@ steps:
     #local_file: "gerdalir_queries"             # for local files (in data/ folder)
   
   step1_cleaning:
-    hf_config: "cases2026_10k"
+  # --- Dataset selection ---
     hf_dataset: "openlegaldata/court-decisions-germany"
+    hf_config: "cases2026_10k"
+    # --- Quality thresholds ---
     #min_text_length: 10
     #min_alpha_ratio: 0.3
     #chunk_size: 5000
@@ -44,27 +46,32 @@ steps:
     #no_unsloth: false
     tokenized_data: "cases2026_10k_tokenized-gemma3"
     # "base_model" is auto-derived from tokenized_data
-    max_steps: 1000
-    checkpointing_steps: 50
     #checkpoint: "step_100"
-    #num_train_epochs: 2              # capped by max_steps (auto-raised if too few)
-    #learning_rate: 1.5e-4
+    # --- MemDec params ---
     #k_neighbors: 4
     #alpha: 0.5
     #lmbda: 0.3
-    #seed: 42
+    # --- Training params ---
+    max_steps: 1000
+    checkpointing_steps: 50
+    #num_train_epochs: 2              # capped by max_steps (auto-raised if too few)
     per_device_train_batch_size: 4    # 1 on CPU, 2 on GPU
     gradient_accumulation_steps: 4
+    #learning_rate: 1.5e-4
+    #seed: 42
   
   step5_testing:
     checkpoint: "step_1000"
     # "base_model" is auto-derived from checkpoint
     #base_model: "gemma3-1b"  # test with different base model of same family
+    # --- MemDec params ---
     #lmbda: 0.3
     #knn_temp: 1.0
+    # --- Generation params ---
     max_new_tokens: 512
     repetition_penalty: 1.2
     #seed: 42
+    # --- Prompt selection ---
     scenarios:
       #- "withdrawals"
       #- "employment"
@@ -76,6 +83,7 @@ steps:
       #- "completion"
       #- "summarization"
       #- "content_creation"
+    # --- Output ---
     #save_results: true
     #compare_base: true
   
@@ -84,11 +92,14 @@ steps:
     tokenized_data: "cases2026_10k_tokenized-gemma3"
     # "base_model" is auto-derived from checkpoint
     #base_model: "gemma3-1b"  # test with different base model of same family
-    #split: "test"
-    max_examples: 500
+    # --- MemDec params ---
     #lmbda: 0.3
     #knn_temp: 1.0
+    # --- Eval params ---
+    #split: "test"
+    max_examples: 500
     batch_size: 4
     #seed: 42
+    # --- Output ---
     #save_results: true
     #compare_base: true
