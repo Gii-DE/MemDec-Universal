@@ -324,6 +324,29 @@ def resolve_checkpoint_path(checkpoint_arg: Optional[str], output_dir: str) -> O
     return _resolve_named_path(checkpoint_arg, output_path, "checkpoint")
 
 
+def _resolve_checkpoint_or_exit(checkpoint_arg: Optional[str], output_dir: str) -> str:
+    """Resolve the training checkpoint; fall back to the newest step_* dir.
+
+    Returns the resolved path, or raises SystemExit(1) with a descriptive
+    error when nothing can be resolved.
+    """
+    resolved = resolve_checkpoint_path(checkpoint_arg or "latest", output_dir)
+    if resolved:
+        return resolved
+    if checkpoint_arg:
+        logger.error(
+            f"❌ --checkpoint '{checkpoint_arg}' could not be resolved. "
+            "Check that the directory exists inside outputs/ "
+            "(or pass an absolute path or 'latest')."
+        )
+    else:
+        logger.error(
+            "❌ No checkpoint specified and no step_* directory found in outputs/. "
+            "Set 'checkpoint' in pipeline_config.yaml or pass --checkpoint <step_X|path>."
+        )
+    raise SystemExit(1)
+
+
 # --- GLOBAL LLM-MODEL HANDLING ---
 def get_default_model() -> str:
     """

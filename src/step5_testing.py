@@ -25,7 +25,7 @@ logger.setLevel('DEBUG')
 
 
 # --- CONFIG ---
-from src.utils import setup_device, get_pipeline_value, _load_usecase_config, resolve_checkpoint_path, resolve_base_model, get_model_config, cleanup_qwen_config, validate_checkpoint_model_type, extract_model_identifier, PROJECT_ROOT, DATA_DIR, KNOWLEDGE_BASE_DIR, OUTPUT_DIR
+from src.utils import setup_device, get_pipeline_value, _load_usecase_config, _resolve_checkpoint_or_exit, resolve_base_model, get_model_config, cleanup_qwen_config, validate_checkpoint_model_type, extract_model_identifier, PROJECT_ROOT, DATA_DIR, KNOWLEDGE_BASE_DIR, OUTPUT_DIR
 from src.step2_tokenization import initialize_tokenizer
 RESULTS_DIR = OUTPUT_DIR / "test_results"
 
@@ -718,7 +718,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--model", type=str, default=config_base_model,
                         help=f"Base model preset (gemma3/qwen3.5/smollm3) [default: auto-derived from checkpoint or default]")
     parser.add_argument("--checkpoint", type=str, default=config_checkpoint,
-                        help="Trained checkpoint to load as knn_generator. Accepts: <step_5000>, <outputs/step_5000>, absolute path, or <latest>")
+                        help="Trained checkpoint to load as knn_generator. Accepts: <step_5000>, <outputs/step_5000>, absolute path, or <latest> (default).")
     parser.add_argument("--max-new-tokens", type=int, default=config_max_new_tokens,
                         help=f"Max tokens to generate [default: {config_max_new_tokens}]")
     parser.add_argument("--repetition-penalty", type=float, default=config_repetition_penalty,
@@ -762,14 +762,7 @@ if __name__ == "__main__":
     args = parse_arguments()
     model_keyword = extract_model_identifier(args.model)
     model_info = get_model_config(model_keyword)
-    resolved_checkpoint = resolve_checkpoint_path(args.checkpoint, args.output_dir)
-    if args.checkpoint and not resolved_checkpoint:
-        logger.error(
-            f"❌ --checkpoint '{args.checkpoint}' could not be resolved. "
-            "Check that the directory exists inside outputs/ "
-            "(or pass an absolute path or 'latest')."
-        )
-        raise SystemExit(1)
+    resolved_checkpoint = _resolve_checkpoint_or_exit(args.checkpoint, args.output_dir)
     config = TestingConfig(
         base_model=model_info['name'],
         checkpoint_dir=resolved_checkpoint,

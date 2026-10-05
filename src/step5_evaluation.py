@@ -23,7 +23,7 @@ logger.setLevel('DEBUG')
 
 
 # --- CONFIG ---
-from src.utils import project_rel, setup_device, get_pipeline_value, resolve_base_model, resolve_checkpoint_path, _resolve_named_path, get_model_config, cleanup_qwen_config, validate_checkpoint_model_type, extract_model_identifier, PROJECT_ROOT, DATA_DIR, OUTPUT_DIR
+from src.utils import project_rel, setup_device, get_pipeline_value, resolve_base_model, _resolve_checkpoint_or_exit, _resolve_named_path, get_model_config, cleanup_qwen_config, validate_checkpoint_model_type, extract_model_identifier, PROJECT_ROOT, DATA_DIR, OUTPUT_DIR
 from src.step2_tokenization import initialize_tokenizer
 RESULTS_DIR = OUTPUT_DIR / "test_results"
 
@@ -378,7 +378,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("tokenized_data", nargs="?", type=str, default=config_tokenized_data,
                         help=f"Path to tokenized dataset directory [default: {config_tokenized_data}]")
     parser.add_argument("--checkpoint", type=str, default=config_checkpoint,
-                        help="Trained checkpoint to load as knn_generator. Accepts: <step_5000>, <outputs/step_5000>, absolute path, or <latest>")
+                        help="Trained checkpoint to load as knn_generator. Accepts: <step_5000>, <outputs/step_5000>, absolute path, or <latest> (default).")
     parser.add_argument("--split", type=str, default=config_split, choices=["train", "validation", "test"],
                         help=f"Dataset split to evaluate [default: {config_split}]")
     parser.add_argument("--max-examples", type=int, default=config_max_examples,
@@ -412,14 +412,7 @@ if __name__ == "__main__":
     args = parse_arguments()
     model_keyword = extract_model_identifier(args.model)
     model_info = get_model_config(model_keyword)
-    resolved_checkpoint = resolve_checkpoint_path(args.checkpoint, args.output_dir)
-    if args.checkpoint and not resolved_checkpoint:
-        logger.error(
-            f"❌ --checkpoint '{args.checkpoint}' could not be resolved. "
-            "Check that the directory exists inside outputs/ "
-            "(or pass an absolute path or 'latest')."
-        )
-        raise SystemExit(1)
+    resolved_checkpoint = _resolve_checkpoint_or_exit(args.checkpoint, args.output_dir)
     resolved_tokenized = _resolve_named_path(args.tokenized_data, DATA_DIR, "tokenized-data")
     if not resolved_tokenized:
         logger.error(

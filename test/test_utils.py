@@ -3,7 +3,7 @@ Test Suite for src/utils.py (including unit & integration tests + edge case test
 """
 
 import sys, json, logging, shutil, tempfile, unittest, torch
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -19,10 +19,59 @@ from src.utils import (
     extract_model_identifier,
     get_logger,
     resolve_base_model,
+    resolve_checkpoint_path,
+    _resolve_checkpoint_or_exit,
+    _resolve_named_path,
     project_rel,
     _RelativePathFilter,
     PROJECT_ROOT,
+    DATA_DIR,
 )
+
+class TestResolveCheckpointOrExit(unittest.TestCase):
+    """Test _resolve_checkpoint_or_exit: CLI checkpoint guard with latest-fallback"""
+
+    @patch('src.utils.resolve_checkpoint_path')
+    def test_explicit_checkpoint_resolves(self, mock_resolve):
+        """A valid --checkpoint value is passed through and returned"""
+
+        mock_resolve.return_value = "/output/step_500"
+        result = _resolve_checkpoint_or_exit("step_500", "/output")
+        self.assertEqual(result, "/output/step_500")
+        mock_resolve.assert_called_once_with("step_500", "/output")
+
+    @patch('src.utils.resolve_checkpoint_path')
+    def test_no_checkpoint_falls_back_to_latest(self, mock_resolve):
+        """No --checkpoint triggers the 'latest' scan of the output dir"""
+
+        mock_resolve.return_value = "/output/step_1000"
+        result = _resolve_checkpoint_or_exit(None, "/output")
+        self.assertEqual(result, "/output/step_1000")
+        mock_resolve.assert_called_once_with("latest", "/output")
+
+    @patch('src.utils.resolve_checkpoint_path')
+    @patch('src.utils.logger')
+    def test_explicit_checkpoint_not_found_exits(self, mock_logger, mock_resolve):
+        """Unresolvable --checkpoint aborts with SystemExit and names the arg"""
+
+        mock_resolve.return_value = None
+        with self.assertRaises(SystemExit):
+            _resolve_checkpoint_or_exit("step_999", "/output")
+        error_messages = [str(c) for c in mock_logger.error.call_args_list]
+        self.assertTrue(any("step_999" in msg for msg in error_messages))
+
+    @patch('src.utils.resolve_checkpoint_path')
+    @patch('src.utils.logger')
+    def test_no_checkpoint_no_step_dirs_exits(self, mock_logger, mock_resolve):
+        """No --checkpoint and no step_* found aborts with a setup hint"""
+
+        mock_resolve.return_value = None
+        with self.assertRaises(SystemExit):
+            _resolve_checkpoint_or_exit(None, "/output")
+        error_messages = [str(c) for c in mock_logger.error.call_args_list]
+        self.assertTrue(any("step_*" in msg or "pipeline_config" in msg
+                            for msg in error_messages))
+
 
 class TestLogBlankLine(unittest.TestCase):
     """Test blank line insertion into logger streams"""
@@ -588,6 +637,130 @@ class TestRelativePathFilter(unittest.TestCase):
         finally:
             lg.handlers.clear()
             lg.filters.clear()
+
+
+class TestResolveCheckpointPath(unittest.TestCase):
+    """Test resolve_checkpoint_path formats: absolute, relative, step names, latest"""
+
+    def test_none_input(self):
+        """Test that None input returns None"""
+
+        result = resolve_checkpoint_path(None, "/some/output")
+        self.assertIsNone(result)
+
+    def test_absolute_path_exists(self):
+        """Test absolute path that exists"""
+
+        with patch('pathlib.Path.exists', return_value=True):
+            with patch('pathlib.Path.is_absolute', return_value=True):
+                with patch('pathlib.Path.__str__', return_value="/absolute/path"):
+                    result = resolve_checkpoint_path("/absolute/path", "/output")
+                    self.assertEqual(result, "/absolute/path")
+
+    def test_absolute_path_not_exists(self):
+        """Test absolute path that doesn't exist"""
+
+        with patch('pathlib.Path.exists', return_value=False):
+            with patch('pathlib.Path.is_absolute', return_value=True):
+                result = resolve_checkpoint_path("/absolute/path", "/output")
+                self.assertIsNone(result)
+
+    def test_latest_keyword(self):
+        """Test 'latest' keyword resolution"""
+
+        def make_dir(name_str):
+            """Create a mock directory"""
+            d = MagicMock()
+            d.name = name_str
+            d.is_dir.return_value = True
+            d.__str__ = MagicMock(return_value=f"/output/{name_str}")
+            return d
+
+        mock_dirs = [make_dir("step_100"), make_dir("step_200"), make_dir("checkpoint_50")]
+        with patch('pathlib.Path.exists', return_value=True):
+            with patch('pathlib.Path.iterdir', return_value=mock_dirs):
+                with patch('src.utils.logger'):
+                    result = resolve_checkpoint_path("latest", "/output")
+                    self.assertIsNotNone(result)
+                    self.assertIn("step_200", result)
+
+    def test_latest_no_checkpoints(self):
+        """Test 'latest' with no checkpoints found"""
+
+        with patch('pathlib.Path.exists', return_value=True):
+            with patch('pathlib.Path.iterdir', return_value=[]):
+                result = resolve_checkpoint_path("latest", "/output")
+                self.assertIsNone(result)
+
+    def test_relative_to_project_root(self):
+        """Test relative path resolved to project root"""
+
+        with patch('src.utils.PROJECT_ROOT', Path("/project")):
+            with patch('pathlib.Path.exists', return_value=True):
+                result = resolve_checkpoint_path("relative/path", "/output")
+                self.assertEqual(result, str(Path("/project/relative/path")))
+
+    def test_relative_to_output_dir(self):
+        """Test relative path resolved to output directory"""
+
+        with patch('src.utils.PROJECT_ROOT', Path("/project")):
+            with patch('pathlib.Path.exists') as mock_exists:
+                mock_exists.side_effect = [False, True]
+                result = resolve_checkpoint_path("relative/path", "/output")
+                self.assertEqual(result, str(Path("/output/relative/path")))
+
+
+class TestResolveNamedPath(unittest.TestCase):
+    """Test named path resolution functionality (shared resolver for tokenized data)"""
+
+    def test_none_input(self):
+        """Test that None input returns None"""
+
+        result = _resolve_named_path(None, DATA_DIR, "tokenized-data")
+        self.assertIsNone(result)
+
+    def test_absolute_path_exists(self):
+        """Test absolute path that exists"""
+
+        with patch('pathlib.Path.exists', return_value=True):
+            with patch('pathlib.Path.is_absolute', return_value=True):
+                with patch('pathlib.Path.__str__', return_value="/absolute/path"):
+                    result = _resolve_named_path("/absolute/path", DATA_DIR, "tokenized-data")
+                    self.assertEqual(result, "/absolute/path")
+
+    def test_absolute_path_not_exists(self):
+        """Test absolute path that doesn't exist"""
+
+        with patch('pathlib.Path.exists', return_value=False):
+            with patch('pathlib.Path.is_absolute', return_value=True):
+                result = _resolve_named_path("/absolute/path", DATA_DIR, "tokenized-data")
+                self.assertIsNone(result)
+
+    def test_relative_in_project_root(self):
+        """Test relative path found in PROJECT_ROOT (checked first)"""
+
+        with patch('src.utils.PROJECT_ROOT', Path("/project")):
+            with patch('pathlib.Path.exists') as mock_exists:
+                mock_exists.side_effect = [True, False]
+                result = _resolve_named_path("relative/path", Path("/data"), "tokenized-data")
+                self.assertEqual(result, str(Path("/project/relative/path")))
+
+    def test_relative_in_data_dir(self):
+        """Test relative path found in DATA_DIR (fallback after project root)"""
+
+        with patch('src.utils.PROJECT_ROOT', Path("/project")):
+            with patch('pathlib.Path.exists') as mock_exists:
+                mock_exists.side_effect = [False, True]
+                result = _resolve_named_path("relative/path", Path("/data"), "tokenized-data")
+                self.assertEqual(result, str(Path("/data/relative/path")))
+
+    def test_not_found_anywhere(self):
+        """Test path not found anywhere"""
+
+        with patch('src.utils.PROJECT_ROOT', Path("/project")):
+            with patch('pathlib.Path.exists', return_value=False):
+                result = _resolve_named_path("relative/path", Path("/data"), "tokenized-data")
+                self.assertIsNone(result)
 
 
 if __name__ == '__main__':

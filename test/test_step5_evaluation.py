@@ -8,9 +8,8 @@ from pathlib import Path
 from datasets import Dataset as HFDataset
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-import src.utils
 from src.step5_evaluation import (
-    EvalConfig, resolve_checkpoint_path, _resolve_named_path,
+    EvalConfig,
     load_eval_dataset, joint_evaluate, load_models, main
 )
 
@@ -61,133 +60,6 @@ class TestEvalConfig(unittest.TestCase):
         ]
         for attr in expected_attrs:
             self.assertTrue(hasattr(config, attr))
-
-
-class TestResolveCheckpointPath(unittest.TestCase):
-    """Test checkpoint path resolution functionality"""
-
-    def test_none_input(self):
-        """Test that None input returns None"""
-
-        result = resolve_checkpoint_path(None, "/some/output")
-        self.assertIsNone(result)
-
-    def test_absolute_path_exists(self):
-        """Test absolute path that exists"""
-
-        with patch('pathlib.Path.exists', return_value=True):
-            with patch('pathlib.Path.is_absolute', return_value=True):
-                with patch('pathlib.Path.__str__', return_value="/absolute/path"):
-                    result = resolve_checkpoint_path("/absolute/path", "/output")
-                    self.assertEqual(result, "/absolute/path")
-
-    def test_absolute_path_not_exists(self):
-        """Test absolute path that doesn't exist"""
-
-        with patch('pathlib.Path.exists', return_value=False):
-            with patch('pathlib.Path.is_absolute', return_value=True):
-                result = resolve_checkpoint_path("/absolute/path", "/output")
-                self.assertIsNone(result)
-
-    def test_latest_keyword(self):
-        """Test 'latest' keyword resolution"""
-
-        def make_dir(name_str):
-            """Create a mock directory"""
-            d = MagicMock()
-            d.name = name_str
-            d.is_dir.return_value = True
-            d.__str__ = MagicMock(return_value=f"/output/{name_str}")
-            return d
-
-        mock_dirs = [make_dir("step_100"), make_dir("step_200"), make_dir("checkpoint_50")]
-        with patch('pathlib.Path.exists', return_value=True):
-            with patch('pathlib.Path.iterdir', return_value=mock_dirs):
-                with patch('src.step5_evaluation.logger'):
-                    result = resolve_checkpoint_path("latest", "/output")
-                    self.assertIsNotNone(result)
-                    self.assertIn("step_200", result)
-
-    def test_latest_no_checkpoints(self):
-        """Test 'latest' with no checkpoints found"""
-
-        with patch('pathlib.Path.exists', return_value=True):
-            with patch('pathlib.Path.iterdir', return_value=[]):
-                result = resolve_checkpoint_path("latest", "/output")
-                self.assertIsNone(result)
-
-    def test_relative_to_project_root(self):
-        """Test relative path resolved to project root"""
-
-        with patch('src.utils.PROJECT_ROOT', Path("/project")):
-            with patch('pathlib.Path.exists', return_value=True):
-                result = resolve_checkpoint_path("relative/path", "/output")
-                self.assertEqual(result, str(Path("/project/relative/path")))
-
-    def test_relative_to_output_dir(self):
-        """Test relative path resolved to output directory"""
-
-        with patch('src.utils.PROJECT_ROOT', Path("/project")):
-            with patch('pathlib.Path.exists') as mock_exists:
-                mock_exists.side_effect = [False, True]
-                result = resolve_checkpoint_path("relative/path", "/output")
-                self.assertEqual(result, str(Path("/output/relative/path")))
-
-
-class TestResolveNamedPath(unittest.TestCase):
-    """Test named path resolution functionality (shared resolver for tokenized data)"""
-
-    def test_none_input(self):
-        """Test that None input returns None"""
-
-        result = _resolve_named_path(None, src.utils.DATA_DIR, "tokenized-data")
-        self.assertIsNone(result)
-
-    def test_absolute_path_exists(self):
-        """Test absolute path that exists"""
-
-        with patch('pathlib.Path.exists', return_value=True):
-            with patch('pathlib.Path.is_absolute', return_value=True):
-                with patch('pathlib.Path.__str__', return_value="/absolute/path"):
-                    result = _resolve_named_path("/absolute/path", src.utils.DATA_DIR, "tokenized-data")
-                    self.assertEqual(result, "/absolute/path")
-
-    def test_absolute_path_not_exists(self):
-        """Test absolute path that doesn't exist"""
-
-        with patch('pathlib.Path.exists', return_value=False):
-            with patch('pathlib.Path.is_absolute', return_value=True):
-                result = _resolve_named_path("/absolute/path", src.utils.DATA_DIR, "tokenized-data")
-                self.assertIsNone(result)
-
-    def test_relative_in_project_root(self):
-        """Test relative path found in PROJECT_ROOT (checked first)"""
-
-        with patch('src.utils.DATA_DIR', Path("/data")):
-            with patch('src.utils.PROJECT_ROOT', Path("/project")):
-                with patch('pathlib.Path.exists') as mock_exists:
-                    mock_exists.side_effect = [True, False]
-                    result = _resolve_named_path("relative/path", src.utils.DATA_DIR, "tokenized-data")
-                    self.assertEqual(result, str(Path("/project/relative/path")))
-
-    def test_relative_in_data_dir(self):
-        """Test relative path found in DATA_DIR (fallback after project root)"""
-
-        with patch('src.utils.DATA_DIR', Path("/data")):
-            with patch('src.utils.PROJECT_ROOT', Path("/project")):
-                with patch('pathlib.Path.exists') as mock_exists:
-                    mock_exists.side_effect = [False, True]
-                    result = _resolve_named_path("relative/path", src.utils.DATA_DIR, "tokenized-data")
-                    self.assertEqual(result, str(Path("/data/relative/path")))
-
-    def test_not_found_anywhere(self):
-        """Test path not found anywhere"""
-
-        with patch('src.utils.DATA_DIR', Path("/data")):
-            with patch('src.utils.PROJECT_ROOT', Path("/project")):
-                with patch('pathlib.Path.exists', return_value=False):
-                    result = _resolve_named_path("relative/path", src.utils.DATA_DIR, "tokenized-data")
-                    self.assertIsNone(result)
 
 
 class TestLoadEvalDataset(unittest.TestCase):
