@@ -56,21 +56,20 @@ class TrainingConfig:
     k_neighbors: int = 4
     alpha: float = 0.5
     lmbda: float = 0.3      # affects tests & evaluation
+    # Training params
+    max_steps: int = 1000    # reduced from 5000 for testing
+    num_train_epochs: int = 2   # auto-raised in train_memdec when too small for max_steps
+    checkpointing_steps: int = 50   # saved checkpoints interval
+    batch_size: int = 2    # GPU default; CPU fallback
+    per_device_train_batch_size: int = 2
+    gradient_accumulation_steps: int = 8
+    no_unsloth: bool = False   # True disables Unsloth kernels (plain HF Transformers training)
     # Optimization params
     learning_rate: float = 1.5e-4
     lr_scheduler_type: str = "cosine"
     weight_decay: float = 0.01
     warmup_steps: int = 50
-    num_train_epochs: int = 2   # auto-raised in train_memdec when too small for max_steps
     seed: int = 42
-    # Training settings
-    max_steps: int = 1000    # reduced from 5000 for testing
-    checkpointing_steps: int = 50   # saved checkpoints interval
-    # Batch size (GPU defaults; CPU fallback)
-    batch_size: int = 2
-    per_device_train_batch_size: int = 2
-    gradient_accumulation_steps: int = 8
-    no_unsloth: bool = False   # True disables Unsloth kernels (plain HF Transformers training)
 
 
 # --- HELPERS ---
