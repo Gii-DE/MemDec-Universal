@@ -176,13 +176,15 @@ def process_datasets(dataset_paths: List[str], output_path: str, index_file: str
 
 
 # --- MAIN ---
-def main(datasets: List[str], output_dir: str = None) -> None:
+def main(datasets: List[str], output_dir: str = None, corpus_name: str = None) -> None:
     """
     Main function to process and combine multiple datasets.
     
     Args:
         datasets: List of dataset names or paths to process
         output_dir: Directory to save the combined dataset (if None, loads from config)
+        corpus_name: Name of the corpus used for the output dir default and the
+            index file (if None, loads pipeline.corpus_name from config)
     
     Returns:
         None
@@ -190,8 +192,9 @@ def main(datasets: List[str], output_dir: str = None) -> None:
     Raises:
         SystemExit: If an error occurs during processing
     """
+    corpus_name = corpus_name or CORPUS_NAME
     if output_dir is None:
-        output_dir = get_pipeline_value("steps.step0_data_management.default_output_dir", f"dataset/{CORPUS_NAME}")
+        output_dir = get_pipeline_value("steps.step0_data_management.default_output_dir", f"dataset/{corpus_name}")
     log_blank_line(logger)
     logger.info("=" * 60)
     logger.info("🗃️ STEP 0: Dataset Corpus Creation")
@@ -221,7 +224,7 @@ def main(datasets: List[str], output_dir: str = None) -> None:
     
         if not full_dataset_paths:
             raise FileNotFoundError("No valid datasets found. Please check your dataset paths.")
-        index_file = str(DATA_DIR / f"{CORPUS_NAME}_index.json")
+        index_file = str(DATA_DIR / f"{corpus_name}_index.json")
         logger.info(f"Processing {len(full_dataset_paths)} datasets:")
         for ds in full_dataset_paths:
             logger.info(f"  • {ds}")
@@ -251,14 +254,15 @@ def parse_arguments() -> argparse.Namespace:
         description="Combine multiple datasets into a single dataset for processing"
     )
     config_datasets = get_pipeline_value("steps.step0_data_management.datasets", [])
-    default_output = f"dataset/{CORPUS_NAME}"
+    parser.add_argument("--corpus-name", type=str, default=None,
+                        help=f"Name of the corpus (default output dir and index file) [default: {CORPUS_NAME}]")
     parser.add_argument("datasets", nargs="*", default=config_datasets,
                         help=f"Names or paths of the datasets to combine [default: {config_datasets}]")
-    parser.add_argument("--output-dir", type=str, default=default_output,
-                       help=f"Output directory for the combined dataset [default: {default_output}]")
+    parser.add_argument("--output-dir", type=str, default=None,
+                       help="Output directory for the combined dataset [default: dataset/<corpus_name>]")
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_arguments()
-    main(datasets=args.datasets, output_dir=args.output_dir)
+    main(datasets=args.datasets, output_dir=args.output_dir, corpus_name=args.corpus_name)
