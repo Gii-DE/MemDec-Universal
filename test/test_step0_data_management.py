@@ -344,6 +344,19 @@ class TestMainFunction(unittest.TestCase):
         self.assertTrue(any("Error" in msg or "Disk full" in msg for msg in error_messages),
                         "Logger should record the processing error")
 
+    @patch('src.step0_data_management.logger')
+    def test_main_missing_corpus_name_raises_systemexit(self, mock_logger):
+        """Test that a missing corpus name (no config, no --corpus-name) aborts with SystemExit"""
+
+        output_dir = str(Path(self.temp_dir) / "output")
+        with patch.object(step0, "CORPUS_NAME", None):
+            with self.assertRaises(SystemExit):
+                main(datasets=["test_dataset"], output_dir=output_dir, corpus_name=None)
+        mock_logger.error.assert_called()
+        error_messages = [str(c) for c in mock_logger.error.call_args_list]
+        self.assertTrue(any("corpus" in msg.lower() for msg in error_messages),
+                        "Logger should report the missing corpus name")
+
 
 class TestEdgeCases(unittest.TestCase):
     """Test edge cases and boundary conditions"""
