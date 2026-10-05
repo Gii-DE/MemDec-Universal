@@ -32,11 +32,22 @@ datasets:         # URL-based Dataset (for remote downloads)
       id: ["aktenzeichen", "url"]
       meta_date: ["entscheidungsdatum", "date"]
 
-# ============================================================
-# Datasets of Open Legal Data
-# ============================================================
+
 huggingface:      # HuggingFace Dataset
   datasets:
+    # Without Subsets (Config) | source: https://huggingface.co/datasets/DomainLLM/german-law-qa
+    - dataset_name: "DomainLLM/german-law-qa"
+      split: "train"
+      output_name: "german_law_qa"
+      description: "German law QA pairs (single default subset)"
+      field_mapping:
+        text: ["question", "answer", "context"]
+        meta_category: ["law", "dataset_name"]
+        meta_date: []
+        id: ["row_id"]
+    # ============================================================
+    # Datasets of Open Legal Data
+    # ============================================================ 
     # 2026 Laws | source: https://huggingface.co/datasets/openlegaldata/laws-germany
     - dataset_name: "openlegaldata/laws-germany"
       split: "train"
