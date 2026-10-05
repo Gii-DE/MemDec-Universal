@@ -40,6 +40,7 @@ huggingface:      # HuggingFace Dataset
       split: "train"
       output_name: "german_law_qa"
       description: "German law QA pairs (single default subset)"
+      config: null
       field_mapping:
         text: ["question", "answer", "context"]
         meta_category: ["law", "dataset_name"]
