@@ -49,6 +49,7 @@ steps:
     #max_steps: 1000
     #checkpointing_steps: 50
     #checkpoint: "step_1000"
+    #num_train_epochs: 2
     #learning_rate: 1.5e-4
     #k_neighbors: 4
     #alpha: 0.5

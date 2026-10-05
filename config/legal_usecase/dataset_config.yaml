@@ -36,8 +36,8 @@ datasets:         # URL-based Dataset (for remote downloads)
 # Datasets of Open Legal Data
 # ============================================================
 huggingface:      # HuggingFace Dataset
-  datasets:             # source: https://huggingface.co/openlegaldata/datasets
-    # 2026 Laws
+  datasets:
+    # 2026 Laws | source: https://huggingface.co/datasets/openlegaldata/laws-germany
     - dataset_name: "openlegaldata/laws-germany"
       split: "train"
       output_name: "laws_germany_10k"
@@ -59,7 +59,7 @@ huggingface:      # HuggingFace Dataset
         meta_date: ["created_date", "updated_date"]
         id: ["id", "slug"]
 
-    # 2026 Cases
+    # 2026 Cases | source: https://huggingface.co/datasets/openlegaldata/court-decisions-germany
     - dataset_name: "openlegaldata/court-decisions-germany"
       split: "train"
       output_name: "cases2026_10k"
