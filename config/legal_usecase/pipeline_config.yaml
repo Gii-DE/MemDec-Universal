@@ -59,7 +59,7 @@ steps:
   step5_testing:
     checkpoint: "step_1000"
     # "base_model" is auto-derived from checkpoint
-    #base_model: "unsloth/gemma-3-1b-it"  # test with different base model of same family
+    #base_model: "gemma3-1b"  # test with different base model of same family
     #lmbda: 0.3
     #knn_temp: 1.0
     max_new_tokens: 512
@@ -83,7 +83,7 @@ steps:
     checkpoint: "step_1000"
     tokenized_data: "cases2026_10k_tokenized-gemma3"
     # "base_model" is auto-derived from checkpoint
-    #base_model: "unsloth/gemma-3-1b-it"  # test with different base model of same family
+    #base_model: "gemma3-1b"  # test with different base model of same family
     #split: "test"
     max_examples: 500
     #lmbda: 0.3
