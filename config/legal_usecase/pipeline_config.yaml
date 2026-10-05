@@ -19,7 +19,7 @@ steps:
     #local_file: "gerdalir_queries"             # for local files (in data/ folder)
   
   step1_cleaning:
-  # --- Dataset selection ---
+    # --- Dataset selection ---
     hf_dataset: "openlegaldata/court-decisions-germany"
     hf_config: "cases2026_10k"
     # --- Quality thresholds ---
