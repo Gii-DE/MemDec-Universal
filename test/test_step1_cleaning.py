@@ -23,6 +23,7 @@ from src.step1_cleaning import (
     cleaning_process,
     get_field_mapping,
     get_dataset_name_from_config,
+    get_dataset_config,
     main,
 )
 src.utils.get_logger = _real_get_logger
@@ -201,6 +202,43 @@ class TestDatasetNameGeneration(unittest.TestCase):
         """Test unknown configuration fallback"""
 
         self.assertEqual(get_dataset_name_from_config("unknown-config"), "unknown")
+
+
+class TestGetDatasetConfig(unittest.TestCase):
+    """Test get_dataset_config resolution and ambiguity handling"""
+
+    def _mock_datasets(self, mock_load_config):
+        mock_load_config.return_value = {
+            "huggingface": {"datasets": [
+                {"dataset_name": "a/laws", "config": "dump-1k", "output_name": "laws_1k"},
+                {"dataset_name": "a/cases", "config": "dump-1k", "output_name": "cases_1k"},
+            ]}
+        }
+
+    @patch('src.step1_cleaning._load_usecase_config')
+    def test_ambiguous_config_raises_systemexit(self, mock_load_config):
+        """Duplicate config names without --hf-dataset abort with SystemExit"""
+
+        self._mock_datasets(mock_load_config)
+        with self.assertRaises(SystemExit):
+            get_dataset_config(hf_config="dump-1k")
+
+    @patch('src.step1_cleaning._load_usecase_config')
+    def test_hf_dataset_disambiguates_duplicate_config(self, mock_load_config):
+        """--hf-dataset resolves the correct entry when configs collide"""
+
+        self._mock_datasets(mock_load_config)
+        result = get_dataset_config(hf_config="dump-1k", hf_dataset="a/cases")
+        self.assertEqual(result["output_name"], "cases_1k")
+
+    @patch('src.step1_cleaning._load_usecase_config')
+    def test_unique_output_name_resolves(self, mock_load_config):
+        """A unique output_name resolves without --hf-dataset"""
+
+        self._mock_datasets(mock_load_config)
+        result = get_dataset_config(hf_config="laws_1k")
+        self.assertEqual(result["dataset_name"], "a/laws")
+
 
 class TestCleaningProcess(unittest.TestCase):
     """Test full cleaning process function"""

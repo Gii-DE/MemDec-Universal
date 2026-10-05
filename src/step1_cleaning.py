@@ -158,9 +158,17 @@ def get_dataset_config(hf_config: str = None, hf_dataset: str = None) -> dict:
                     ):
                         return ds
             if hf_config:
-                for ds in datasets_list:
-                    if ds.get("output_name") == hf_config or ds.get("config") == hf_config:
-                        return ds
+                matches = [ds for ds in datasets_list
+                           if ds.get("output_name") == hf_config or ds.get("config") == hf_config]
+                if len(matches) > 1:
+                    names = [f"{ds.get('dataset_name')} (output_name: {ds.get('output_name')})" for ds in matches]
+                    logger.error(
+                        f"❌ Ambiguous --hf-config '{hf_config}': matches {len(matches)} datasets: {names}. "
+                        "Disambiguate via --hf-dataset or a unique output_name"
+                    )
+                    raise SystemExit(1)
+                if matches:
+                    return matches[0]
             if hf_dataset:
                 for ds in datasets_list:
                     if ds.get("dataset_name") == hf_dataset:
