@@ -267,7 +267,7 @@ class TestDatasetSaving(unittest.TestCase):
             str(self.output_path),
             "cleaned_path",
             tokenizer,
-            train_split=0.8,
+            train_test_split=0.8,
         )
         tokenized_dataset.train_test_split.assert_not_called()
         self.assertEqual(result["train_file"], str(train_file))
@@ -311,7 +311,7 @@ class TestDatasetSaving(unittest.TestCase):
             str(self.output_path),
             "cleaned_path",
             tokenizer,
-            train_split=0.75,
+            train_test_split=0.75,
         )
         self.assertTrue((self.output_path / "train.json").exists())
         self.assertTrue((self.output_path / "test.json").exists())
@@ -387,7 +387,7 @@ class TestMainFunction(unittest.TestCase):
             "train_samples": 1,
             "test_samples": 0,
         }
-        main(dataset_cleaned=cleaned_name, base_model="test-model", num_workers=1, train_split=0.8)
+        main(dataset_cleaned=cleaned_name, base_model="test-model", num_workers=1, train_test_split=0.8)
         mock_load.assert_called_once()
         mock_init_tok.assert_called_once_with("test-model")
         mock_tokenize.assert_called_once()

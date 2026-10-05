@@ -142,7 +142,7 @@ def save_train_test_json(
     output_path: str,
     cleaned_path: str,
     tokenizer: PreTrainedTokenizer,
-    train_split: float = 0.8
+    train_test_split: float = 0.8
 ) -> Dict[str, Any]:
     """
     Split tokenized dataset and save train/test JSON files.
@@ -152,7 +152,7 @@ def save_train_test_json(
         output_path: Path to save the JSON files
         cleaned_path: Path to the cleaned dataset
         tokenizer: Tokenizer used for tokenization
-        train_split: Fraction of data to use for training (default: 0.8)
+        train_test_split: Fraction of data to use for training (default: 0.8)
     
     Returns:
         Dictionary containing metadata about the saved files
@@ -190,9 +190,9 @@ def save_train_test_json(
         compatible_models = [tokenizer_model]
 
     output_path.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Splitting dataset ({train_split*100:.0f}% train / {(1-train_split)*100:.0f}% test, seed=42)...")
+    logger.info(f"Splitting dataset ({train_test_split*100:.0f}% train / {(1-train_test_split)*100:.0f}% test, seed=42)...")
     splits = tokenized_dataset.train_test_split(
-        test_size=1-train_split,
+        test_size=1-train_test_split,
         seed=42,
         shuffle=True
     )
@@ -253,7 +253,7 @@ def main(
     dataset_cleaned: Optional[str], 
     base_model: str = None, 
     num_workers: Optional[int] = None,
-    train_split: float = 0.8
+    train_test_split: float = 0.8
 ) -> None:
     """
     Main function to tokenize the locally cleaned dataset and saves it as Arrow & JSON files.
@@ -263,7 +263,7 @@ def main(
             to steps.step2_tokenization.dataset_cleaned or pipeline.corpus_name via CLI)
         base_model: Model to use for tokenization (default: None)
         num_workers: Number of workers for tokenization (default: None)
-        train_split: Fraction of data to use for training (default: 0.8)
+        train_test_split: Fraction of data to use for training (default: 0.8)
     
     Returns:
         None
@@ -319,7 +319,7 @@ def main(
             str(tokenized_path),
             str(cleaned_path),
             tokenizer,
-            train_split=train_split
+            train_test_split=train_test_split
         )
         logger.info("="*60)
         logger.info(f"📁 Output directory: {tokenized_path}")
@@ -361,14 +361,14 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Tokenize cleaned dataset for training")
     config_base_model = resolve_base_model(step_config_key="steps.step2_tokenization")
     config_dataset_cleaned = get_pipeline_value("steps.step2_tokenization.dataset_cleaned", CORPUS_NAME)
-    config_train_split = get_pipeline_value("steps.step2_tokenization.train_test_split", 0.8)
+    config_train_test_split = get_pipeline_value("steps.step2_tokenization.train_test_split", 0.8)
     config_num_workers = get_pipeline_value("steps.step2_tokenization.num_workers", 2)
     parser.add_argument("--model", default=config_base_model,
                         help=f"Tokenizer model (gemma3/qwen3.5/smollm3) [default: {config_base_model}]")
     parser.add_argument("dataset_cleaned", nargs="?", default=config_dataset_cleaned,
                         help=f"Name from step1 (e.g., cases2022_1k) [default: {config_dataset_cleaned}]")
-    parser.add_argument("--train-split", type=float, default=config_train_split,
-                        help=f"Train/test split ratio [default: {config_train_split}]")
+    parser.add_argument("--train-test-split", type=float, default=config_train_test_split,
+                        help=f"Train/test split ratio [default: {config_train_test_split}]")
     parser.add_argument("--num-workers", type=int, default=config_num_workers, 
                         help=f"Number of worker processes [default: {config_num_workers}]")
     args = parser.parse_args()
@@ -384,6 +384,6 @@ if __name__ == '__main__':
     main(
         base_model=model_info['name'],
         dataset_cleaned=args.dataset_cleaned,
-        train_split=args.train_split,
+        train_test_split=args.train_test_split,
         num_workers=args.num_workers,
     )
