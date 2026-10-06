@@ -67,7 +67,7 @@ The pipeline runs on `Python 3.11` with `PyTorch (CUDA 12.8)` and `Unsloth` for 
 
 0. <kbd>***Set Environment Variables***</kbd> → [`.env.example`](./.env.example)
 
-1. <kbd>***Create & Activate Virtual Environment***</kbd>
+1. <kbd>***Create & Activate Virtual Environment***</kbd><br>
    a) <u>*Using Python*</u>:
    ```powershell
    # Python v3.11 must be pre-installed: https://www.python.org/downloads/
