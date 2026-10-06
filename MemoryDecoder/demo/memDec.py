@@ -10,6 +10,7 @@
 # - Generation Behavior: Replaced StoppingCriteriaList with EOS token detection for early stopping
 # - Generation Behavior: Integrated repetition penalty before and during the generation loop
 # - Generation Behavior: Added _apply_repetition_penalty() static helper
+# - Generation Behavior: Added multinomial sampling support (do_sample with temperature/top_p/top_k)
 # - API Compatibility: __init__ deep-copies base_lm.config and pins the wrapper's attn implementation to 'eager' so transformers' SDPA dispatch check no longer rejects the wrapper when submodels are loaded with attn_implementation='sdpa'
 #
 # The original code is available at: 
@@ -45,7 +46,8 @@ class MemoryDecoder(PreTrainedModel, GenerationMixin):
         logits_joint = logaddexp(logits_base + log(1‑λ),
                                  logits_knn  + log(λ))
 
-    Greedy decoding chooses argmax over `logits_joint`.
+    Decoding selects argmax (greedy) or samples from `logits_joint`
+    when `do_sample=True` (temperature / top_p / top_k supported).
     """
     def __init__(
         self,
@@ -125,10 +127,8 @@ class MemoryDecoder(PreTrainedModel, GenerationMixin):
         generation_config: Optional[GenerationConfig] = None,
         **kwargs,
     ):
-        do_sample = getattr(generation_config, 'do_sample', kwargs.get('do_sample', False)) if generation_config is not None else kwargs.get('do_sample', False)
-        if do_sample:
-            raise ValueError("MemoryDecoder.generate only supports greedy decoding (do_sample=False).")
         _gc = generation_config or GenerationConfig()
+        do_sample = kwargs.get("do_sample", getattr(_gc, "do_sample", False))
         eos_token_id = (
             kwargs.get("eos_token_id")
             or getattr(_gc, "eos_token_id", None)
@@ -144,6 +144,9 @@ class MemoryDecoder(PreTrainedModel, GenerationMixin):
             or getattr(_gc, "repetition_penalty", None)
             or 1.0
         )
+        temperature = kwargs.get("temperature", getattr(_gc, "temperature", 1.0))
+        top_p       = kwargs.get("top_p",       getattr(_gc, "top_p", 1.0))
+        top_k       = kwargs.get("top_k",       getattr(_gc, "top_k", 0))
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids)
         # Initialise caches with a single forward.
@@ -159,8 +162,9 @@ class MemoryDecoder(PreTrainedModel, GenerationMixin):
             next_token_logits = self._apply_repetition_penalty(
                 next_token_logits, input_ids, repetition_penalty
             )
-        # Greedy select
-        next_tokens = torch.argmax(next_token_logits, dim=-1).unsqueeze(-1)  # (B, 1)
+        next_tokens = self._select_next_token(
+            next_token_logits, do_sample, temperature, top_p, top_k
+        )                                                                     # (B, 1)
         generated   = torch.cat([input_ids, next_tokens], dim=-1)            # (B, T+1)
         current_mask = torch.cat([attention_mask, torch.ones((attention_mask.shape[0], 1), device=attention_mask.device)], dim=-1)
         
@@ -184,11 +188,48 @@ class MemoryDecoder(PreTrainedModel, GenerationMixin):
                 next_token_logits = self._apply_repetition_penalty(
                     next_token_logits, generated, repetition_penalty
                 )
-            next_tokens = torch.argmax(next_token_logits, dim=-1).unsqueeze(-1)
+            next_tokens = self._select_next_token(
+                next_token_logits, do_sample, temperature, top_p, top_k
+            )
             generated   = torch.cat([generated, next_tokens], dim=-1)
             current_mask = torch.cat([current_mask, torch.ones((current_mask.shape[0], 1), device=current_mask.device)], dim=-1)
             num_new_tokens += 1
         return generated
+
+    def _select_next_token(
+        self,
+        logits: torch.FloatTensor,
+        do_sample: bool,
+        temperature: float,
+        top_p: float,
+        top_k: int,
+    ) -> torch.LongTensor:
+        """Pick next token: argmax for greedy, multinomial when sampling."""
+        if not do_sample:
+            return torch.argmax(logits, dim=-1).unsqueeze(-1)
+        probs = self._sampling_distribution(logits, temperature, top_p, top_k)
+        return torch.multinomial(probs, num_samples=1)
+
+    @staticmethod
+    def _sampling_distribution(
+        logits: torch.FloatTensor,
+        temperature: float,
+        top_p: float,
+        top_k: int,
+    ) -> torch.FloatTensor:
+        """Build a multinomial distribution from the fused log-probs."""
+        probs = (logits.float() / max(temperature, 1e-6)).softmax(dim=-1)
+        if top_k:
+            k   = min(int(top_k), probs.shape[-1])
+            kth = probs.topk(k).values[..., -1, None]
+            probs = probs.masked_fill(probs < kth, 0.0)
+        if 0.0 < top_p < 1.0:
+            sorted_probs, sorted_idx = probs.sort(dim=-1, descending=True)
+            cumulative = sorted_probs.cumsum(dim=-1)
+            remove = (cumulative - sorted_probs) >= top_p
+            sorted_probs = sorted_probs.masked_fill(remove, 0.0)
+            probs = torch.zeros_like(probs).scatter(-1, sorted_idx, sorted_probs)
+        return probs
 
     @staticmethod
     def _apply_repetition_penalty(

@@ -40,7 +40,6 @@ class TestTestingConfig(unittest.TestCase):
         self.assertEqual(config.max_new_tokens, TestingConfig.max_new_tokens)
         self.assertEqual(config.lmbda, TestingConfig.lmbda)
         self.assertEqual(config.batch_size, TestingConfig.batch_size)
-        self.assertEqual(config.seed, TestingConfig.seed)
         self.assertTrue(config.save_results)
         self.assertTrue(config.compare_with_base)
         self.assertIsNone(config.base_model)
@@ -333,6 +332,23 @@ class TestGenerateResponse(unittest.TestCase):
         self.assertEqual(call_kwargs["pad_token_id"], 99)
         self.assertIn("repetition_penalty", call_kwargs)
         self.assertEqual(call_kwargs["repetition_penalty"], config.repetition_penalty)
+
+    def test_generate_response_sampling_params(self):
+        """Test that sampling parameters are forwarded when do_sample is enabled"""
+
+        mock_inputs    = self._make_mock_inputs(input_length=1)
+        mock_tokenizer = Mock()
+        mock_tokenizer.return_value = mock_inputs
+        mock_tokenizer.eos_token_id = 99
+        mock_tokenizer.decode = Mock(return_value="response")
+        mock_model = self._make_mock_model(output_token_ids=[0, 7])
+        config = self._make_config(do_sample=True, temperature=0.8, top_p=0.9, top_k=40)
+        generate_responses(mock_model, mock_tokenizer, ["prompt"], config)
+        _, call_kwargs = mock_model.generate.call_args
+        self.assertTrue(call_kwargs["do_sample"])
+        self.assertEqual(call_kwargs["temperature"], 0.8)
+        self.assertEqual(call_kwargs["top_p"], 0.9)
+        self.assertEqual(call_kwargs["top_k"], 40)
 
 
 class TestTestLegalScenario(unittest.TestCase):

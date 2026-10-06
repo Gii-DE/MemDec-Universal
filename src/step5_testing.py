@@ -44,8 +44,15 @@ class TestingConfig:
     # Generation settings
     max_new_tokens: int = 300
     repetition_penalty: float = 1.25
+    do_sample: bool = False     # original demo default
+    # False: always pick the most likely token (greedy)
+    # True:  sample tokens randomly; experimental — produced broken output in tests
+    # --- Only when "do_sample=True" ---
+    temperature: float = 1.0    # sampling sharpness
+    top_p: float = 1.0          # nucleus threshold
+    top_k: int = 0              # top-k limit; 0 = off
+    # ----------------------------------
     batch_size: int = 2
-    seed: int = 42
     scenarios: Optional[List[str]] = None
     tasks: Optional[List[str]] = None
     save_results: bool = True
@@ -208,11 +215,17 @@ def generate_responses(
     with torch.inference_mode():
         gen_kwargs = {
             "max_new_tokens": config.max_new_tokens,
-            "do_sample": False,
+            "do_sample": config.do_sample,
             "pad_token_id": eos_id,
             "eos_token_id": eos_id,
             "repetition_penalty": config.repetition_penalty,
         }
+        if config.do_sample:
+            gen_kwargs.update({
+                "temperature": config.temperature,
+                "top_p": config.top_p,
+                "top_k": config.top_k,
+            })
         if isinstance(model, MemoryDecoder):
             out_ids = model.generate(**inputs, generation_config=GenerationConfig(**gen_kwargs))
         else:
@@ -703,13 +716,17 @@ def parse_arguments() -> argparse.Namespace:
     config_knn_temp = get_pipeline_value("steps.step5_testing.knn_temp", default_config.knn_temp)
     config_max_new_tokens = get_pipeline_value("steps.step5_testing.max_new_tokens", default_config.max_new_tokens)
     config_repetition_penalty = get_pipeline_value("steps.step5_testing.repetition_penalty", default_config.repetition_penalty)
-    config_seed = get_pipeline_value("steps.step5_testing.seed", default_config.seed)
+    config_do_sample = get_pipeline_value("steps.step5_testing.do_sample", default_config.do_sample)
+    config_temperature = get_pipeline_value("steps.step5_testing.temperature", default_config.temperature)
+    config_top_p = get_pipeline_value("steps.step5_testing.top_p", default_config.top_p)
+    config_top_k = get_pipeline_value("steps.step5_testing.top_k", default_config.top_k)
     config_scenarios = get_pipeline_value("steps.step5_testing.scenarios", default_config.scenarios)
     config_tasks = get_pipeline_value("steps.step5_testing.tasks", default_config.tasks)
     config_save_results = get_pipeline_value("steps.step5_testing.save_results", default_config.save_results)
     config_compare_base = get_pipeline_value("steps.step5_testing.compare_base", default_config.compare_with_base)
     action_save = "store_false" if config_save_results else "store_true"
     action_compare = "store_false" if config_compare_base else "store_true"
+    action_sample = "store_false" if config_do_sample else "store_true"
     # Variable defaults via pipeline_config
     parser.add_argument("--model", type=str, default=config_base_model,
                         help=f"Base model preset (gemma3/qwen3.5/smollm3) [default: auto-derived from checkpoint or default]")
@@ -719,12 +736,18 @@ def parse_arguments() -> argparse.Namespace:
                         help=f"Max tokens to generate [default: {config_max_new_tokens}]")
     parser.add_argument("--repetition-penalty", type=float, default=config_repetition_penalty,
                         help=f"Repetition penalty for generation (1.0 = off) [default: {config_repetition_penalty}]")
+    parser.add_argument("--do-sample", action=action_sample,
+                        help=f"Enable multinomial sampling instead of greedy decoding [default: {config_do_sample}]")
+    parser.add_argument("--temperature", type=float, default=config_temperature,
+                        help=f"Sampling temperature (only with --do-sample) [default: {config_temperature}]")
+    parser.add_argument("--top-p", type=float, default=config_top_p,
+                        help=f"Nucleus sampling threshold (only with --do-sample) [default: {config_top_p}]")
+    parser.add_argument("--top-k", type=int, default=config_top_k,
+                        help=f"Top-k sampling filter, 0 = off (only with --do-sample) [default: {config_top_k}]")
     parser.add_argument("--lmbda", type=float, default=config_lmbda,
                         help=f"Interpolation weight λ [default: {config_lmbda}]")
     parser.add_argument("--knn-temp", type=float, default=config_knn_temp,
                         help=f"knn_generator logit temperature [default: {config_knn_temp}]")
-    parser.add_argument("--seed", type=int, default=config_seed,
-                        help=f"Random seed [default: {config_seed}]")
     parser.add_argument("--scenarios", type=str, nargs="+", default=config_scenarios,
                         help=f"Scenarios to run (e.g. --scenarios withdrawals employment) [default: {config_scenarios}]")
     parser.add_argument("--tasks", type=str, nargs="+", default=config_tasks,
@@ -764,10 +787,13 @@ if __name__ == "__main__":
         checkpoint_dir=resolved_checkpoint,
         max_new_tokens=args.max_new_tokens,
         repetition_penalty=args.repetition_penalty,
+        do_sample=args.do_sample,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        top_k=args.top_k,
         lmbda=args.lmbda,
         knn_temp=args.knn_temp,
         batch_size=args.batch_size,
-        seed=args.seed,
         scenarios=args.scenarios,
         tasks=args.tasks,
         save_results=args.save_results,
