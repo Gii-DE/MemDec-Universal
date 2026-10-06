@@ -98,7 +98,7 @@ The pipeline runs on `Python 3.11` with `PyTorch (CUDA 12.8)` and `Unsloth` for 
 > [!CAUTION]
 > On Windows, the install order is critical: **pip** re-resolves shared dependencies, so installing *PyTorch* or *Unsloth* first can silently upgrade/downgrade the pinned packages from [<kbd><u>requirements.txt</u></kbd>](requirements.txt), resulting in **CUDA DLL** conflicts and memory-isolation crashes (**Hypervisor Errors**).
 
-3. <kbd>***Authenticate with Hugging Face***</kbd>
+3. <kbd>***Authenticate with Hugging Face***</kbd><br>
    <u>*Setup Steps*</u>:
    1. Login to [*Hugging Face*](https://huggingface.co/) to **request access** on the *Open Legal Data* datasets which are used in this project: 
    [<kbd>openlegaldata/court-decisions-germany</kbd>](https://huggingface.co/datasets/openlegaldata/court-decisions-germany) and
