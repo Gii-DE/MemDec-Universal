@@ -1,6 +1,7 @@
 # ============================================================
 # Data & Artifacts (datasets, model weights, outputs, logs)
 # ============================================================
+.legacy/
 config/*
 !config/HowTo.md
 dataset/*
