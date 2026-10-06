@@ -112,13 +112,13 @@ The global model registry shared across all use-cases. Each entry maps a keyword
 <summary><kbd><strong>START THE SYSTEM!</strong></kbd></summary>
 Once configured, all steps run without extra arguments because parameters are automatically resolved from the <strong>config files</strong>:<br><br>
 
-<a href="/src/step0_dataset.py"><kbd>`python -m src.step0_dataset`</kbd></a>
-<a href="/src/step0_data_management.py"><kbd>`python -m src.step0_data_management`</kbd></a>
-<a href="/src/step1_cleaning.py"><kbd>`python -m src.step1_cleaning`</kbd></a>
-<a href="/src/step2_tokenization.py"><kbd>`python -m src.step2_tokenization`</kbd></a>
-<a href="/src/step3_pretraining.py"><kbd>`python -m src.step3_pretraining`</kbd></a>
-<a href="/src/step4_training.py"><kbd>`python -m src.step4_training`</kbd></a>
-<a href="/src/step5_testing.py"><kbd>`python -m src.step5_testing`</kbd></a>
+<a href="/src/step0_dataset.py"><kbd>`python -m src.step0_dataset`</kbd></a><br>
+<a href="/src/step0_data_management.py"><kbd>`python -m src.step0_data_management`</kbd></a><br>
+<a href="/src/step1_cleaning.py"><kbd>`python -m src.step1_cleaning`</kbd></a><br>
+<a href="/src/step2_tokenization.py"><kbd>`python -m src.step2_tokenization`</kbd></a><br>
+<a href="/src/step3_pretraining.py"><kbd>`python -m src.step3_pretraining`</kbd></a><br>
+<a href="/src/step4_training.py"><kbd>`python -m src.step4_training`</kbd></a><br>
+<a href="/src/step5_testing.py"><kbd>`python -m src.step5_testing`</kbd></a><br>
 <a href="/src/step5_evaluation.py"><kbd>`python -m src.step5_evaluation`</kbd></a><br><br>
 
 > 🛑 All steps resolve their parameters from <kbd>[`pipeline_config.yaml`](#config-pipeline)</kbd>, where commented-out lines show the system defaults. To change one, uncomment and adjust it in the file or override it via CLI arguments. Run any script with `--help` to list all options.
