@@ -135,7 +135,7 @@ class TestSetupEnvironment(unittest.TestCase):
                 mock_test.return_value = {
                     "scenario_name": "test", "title": "Test", "prompts": [],
                     "memory_decoder_responses": [], "base_model_responses": [],
-                    "generation_times": []
+                    "source_checks": []
                 }
                 main(config)
                 self.assertTrue(Path(results_dir).exists())
@@ -157,7 +157,7 @@ class TestSetupEnvironment(unittest.TestCase):
                 mock_test.return_value = {
                     "scenario_name": "test", "title": "Test", "prompts": [],
                     "memory_decoder_responses": [], "base_model_responses": [],
-                    "generation_times": []
+                    "source_checks": []
                 }
                 main(config)
                 logged_messages = [str(c) for c in mock_logger.info.call_args_list]
@@ -356,9 +356,9 @@ class TestTestLegalScenario(unittest.TestCase):
         self.assertEqual(len(result["prompts"]), 2)
         self.assertEqual(len(result["memory_decoder_responses"]), 2)
         self.assertEqual(len(result["base_model_responses"]), 2)
-        self.assertEqual(len(result["generation_times"]), 2)
         self.assertIn("source_checks", result)
         self.assertEqual(len(result["source_checks"]), 2)
+        self.assertIn("gen_time_s", result["source_checks"][0]["memory_decoder"])
 
     @patch('src.step5_testing.generate_responses')
     def test_skips_base_model_when_disabled(self, mock_generate):
@@ -382,10 +382,10 @@ class TestTestLegalScenario(unittest.TestCase):
         scenario = {"title": "Timing Test", "prompts": ["F1", "F2", "F3"]}
         config = self._make_config()
         result = test_legal_scenario("timing", scenario, Mock(), Mock(), Mock(), config)
-        self.assertEqual(len(result["generation_times"]), 3)
-        for entry in result["generation_times"]:
-            self.assertIn("memory_decoder", entry)
-            self.assertIn("base_model", entry)
+        self.assertEqual(len(result["source_checks"]), 3)
+        for entry in result["source_checks"]:
+            self.assertIn("gen_time_s", entry["memory_decoder"])
+            self.assertIn("gen_time_s", entry["base_model"])
 
 
 class TestSaveResults(unittest.TestCase):
@@ -418,7 +418,8 @@ class TestSaveResults(unittest.TestCase):
             "prompts": ["Frage?"],
             "memory_decoder_responses": ["Antwort."],
             "base_model_responses": ["Base Antwort."],
-            "generation_times": [{"memory_decoder": 0.5, "base_model": 0.8}],
+            "source_checks": [{"memory_decoder": {"gen_time_s": 0.5},
+                               "base_model": {"gen_time_s": 0.8}}],
         }]
         save_results(results, config)
         output_files = list(results_dir.iterdir())
@@ -437,7 +438,7 @@ class TestSaveResults(unittest.TestCase):
             "prompts": ["Frage?"],
             "memory_decoder_responses": ["Antwort."],
             "base_model_responses": [],
-            "generation_times": [{"memory_decoder": 1.2}],
+            "source_checks": [{"memory_decoder": {"gen_time_s": 1.2}}],
         }]
         save_results(results, config)
         json_file = next(results_dir.glob("test_results_*.json"))
@@ -464,7 +465,7 @@ class TestSaveResults(unittest.TestCase):
             "prompts": ["Frage?"],
             "memory_decoder_responses": ["Antwort."],
             "base_model_responses": [],
-            "generation_times": [{"memory_decoder": 0.9}],
+            "source_checks": [{"memory_decoder": {"gen_time_s": 0.9}}],
         }]
         save_results(results, config)
         json_file = next(results_dir.glob("test_results_*.json"))
@@ -516,7 +517,7 @@ class TestMainFunction(unittest.TestCase):
         mock_test.return_value = {
             "scenario_name": "x", "title": "X", "prompts": [],
             "memory_decoder_responses": [], "base_model_responses": [],
-            "generation_times": []
+            "source_checks": []
         }
         config = TestingConfig(
             base_model="my-model",
@@ -561,7 +562,7 @@ class TestMainFunction(unittest.TestCase):
         success_result = {
             "scenario_name": "ok", "title": "OK", "prompts": [],
             "memory_decoder_responses": [], "base_model_responses": [],
-            "generation_times": []
+            "source_checks": []
         }
         mock_test.side_effect = [
             Exception("Scenario failed"),
@@ -592,7 +593,8 @@ class TestEdgeCases(unittest.TestCase):
         result = test_legal_scenario("single", scenario, Mock(), Mock(), Mock(), config)
         self.assertEqual(len(result["prompts"]), 1)
         self.assertEqual(len(result["memory_decoder_responses"]), 1)
-        self.assertEqual(len(result["generation_times"]), 1)
+        self.assertEqual(len(result["source_checks"]), 1)
+        self.assertIn("gen_time_s", result["source_checks"][0]["memory_decoder"])
 
     def test_testing_config_serializable_via_dict(self):
         """Test that TestingConfig.__dict__ contains only JSON-safe primitive types"""

@@ -440,7 +440,8 @@ def test_legal_scenario(
         
     Returns:
         Dict with scenario_name, title, tasks, prompts, base_model_responses,
-        memory_decoder_responses, generation_times, and source_checks
+        memory_decoder_responses, and source_checks (each per-prompt check
+        entry also carries a rounded per-model 'gen_time_s' key)
         
     Raises:
         None: Individual prompt errors are logged; processing continues
@@ -463,7 +464,6 @@ def test_legal_scenario(
         "prompts": [],
         "base_model_responses": [],
         "memory_decoder_responses": [],
-        "generation_times": [],
         "source_checks": []
     }
     gen_batch = max(1, config.batch_size)
@@ -473,28 +473,23 @@ def test_legal_scenario(
         results["prompts"].extend(chunk)
         t0          = time.time()
         memdec_resps = generate_responses(memory_decoder, tokenizer, chunk, config, "MemoryDecoder")
-        memdec_time = time.time() - t0
+        memdec_time = round((time.time() - t0) / len(chunk), 3)
         results["memory_decoder_responses"].extend(memdec_resps)
         base_resps = None
+        base_time = None
         if config.compare_with_base:
             t0         = time.time()
             base_resps = generate_responses(base_model, tokenizer, chunk, config, "Base Model")
-            base_time  = time.time() - t0
+            base_time  = round((time.time() - t0) / len(chunk), 3)
             results["base_model_responses"].extend(base_resps)
-            results["generation_times"].extend(
-                {"memory_decoder": memdec_time / len(chunk), "base_model": base_time / len(chunk)}
-                for _ in chunk
-            )
-        else:
-            results["generation_times"].extend(
-                {"memory_decoder": memdec_time / len(chunk)} for _ in chunk
-            )
         for i in range(len(chunk)):
             check_entry = {
-                "memory_decoder": _simple_source_check(memdec_resps[i], scenario_name)
+                "memory_decoder": {"gen_time_s": memdec_time,
+                                   **_simple_source_check(memdec_resps[i], scenario_name)}
             }
             if config.compare_with_base:
-                check_entry["base_model"] = _simple_source_check(base_resps[i], scenario_name)
+                check_entry["base_model"] = {"gen_time_s": base_time,
+                                             **_simple_source_check(base_resps[i], scenario_name)}
             results["source_checks"].append(check_entry)
     return results
 
@@ -505,7 +500,8 @@ def summarize_source_checks(all_results: List[Dict], compare_with_base: bool) ->
 
     Args:
         all_results: Scenario result dicts, each carrying a 'source_checks'
-            list of per-prompt {model: {enabled, max_fuzzy, max_overlap}} dicts
+            list of per-prompt {model: {gen_time_s, enabled, max_fuzzy,
+            max_overlap}} dicts
         compare_with_base: Whether 'base_model' scores exist for pairwise
             win-count comparison
 
