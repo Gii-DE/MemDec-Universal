@@ -13,7 +13,7 @@ MemDec offers a parametric alternative to *Retrieval-Augmented Generation* (RAG)
 ## [<em>`Main Components (Features)`</em>](/assets/project_features.md)
 
 > [!CAUTION]
-> For readability, the [<kbd>***Features Table***</kbd>](assets/project_features.md) above is shown in a condensed version. The full <u><kbd>Terminal Commands</kbd></u> for each script can be copied from here:
+> For readability, the linked [<kbd>***Features Table***</kbd>](assets/project_features.md) above is shown in a condensed version. The full <u><kbd>Terminal Commands</kbd></u> for each script can be copied from here:
 >
 > <details><summary><kbd><strong>utils.py</strong></kbd></summary>
 > 
