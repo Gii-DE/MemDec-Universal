@@ -65,15 +65,19 @@ steps:
     # "base_model" is auto-derived from checkpoint
     #base_model: "gemma3-1b"  # test with different base model of same family
     # --- MemDec params ---
-    #lmbda: 0.3
+    lmbda: 0.2
     #knn_temp: 1.0
     # --- Generation params ---
     max_new_tokens: 512
-    repetition_penalty: 1.2
-    #seed: 42
+    #repetition_penalty: 1.25
+    # --- Sampling (optional) ---
+    #do_sample: true          # default: do_sample=False
+    #temperature: 0.7
+    #top_p: 0.9
+    #top_k: 40
     # --- Prompt selection ---
     scenarios:
-      #- "withdrawals"
+      - "withdrawals"
       #- "employment"
       #- "tax"
       #- "rental"
@@ -93,11 +97,11 @@ steps:
     # "base_model" is auto-derived from checkpoint
     #base_model: "gemma3-1b"  # test with different base model of same family
     # --- MemDec params ---
-    #lmbda: 0.3
+    lmbda: 0.2
     #knn_temp: 1.0
     # --- Eval params ---
     #split: "test"
-    max_examples: 500
+    max_examples: 100
     batch_size: 4
     #seed: 42
     # --- Output ---

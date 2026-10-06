@@ -72,7 +72,11 @@ steps:
     # --- Generation params ---
     #max_new_tokens: 300
     #repetition_penalty: 1.25
-    #seed: 42
+    # --- Sampling (optional) ---
+    #do_sample: true          # default: do_sample=False
+    #temperature: 1.0
+    #top_p: 1.0
+    #top_k: 0
     # --- Prompt selection ---
     scenarios:
       #- "example_scenario_1"

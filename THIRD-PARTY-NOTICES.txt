@@ -20,7 +20,7 @@ MemDec-Universal (https://github.com/Gii-DE/MemDec-Universal) includes third-par
 
    Summary of Modifications:
    - Project Integration: Wired the original MemoryDecoder scripts into the MemDec-Universal pipeline via src.utils path/model resolution, a unified config/output layout, and Unsloth opt-out flags (CLI/env).
-   - Model Architecture Support: Extended layer/embedding capture and generation API compatibility to Gemma 3, Qwen 3.5 and SmolLM3 (including multimodal text-stack fallback and eager-attention pinning).
+   - Model Architecture Support: Extended layer/embedding capture and generation API compatibility to Gemma 3, Qwen 3.5 and SmolLM3 (including multimodal text-stack fallback, eager-attention pinning and optional multinomial sampling in generation).
    - Performance & Memory: Added mixed-precision detection, CPU/GPU memory handling, chunked KL-loss computation, memory-mapped KNN datastore creation, Unsloth bfloat16 training, and bitsandbytes AdamW8bit optimizer.
    - Correctness & Robustness: Fixed attention-mask propagation in generation, aligned knn_prob/logit tensor shapes, resolved datastore path mismatches, added optimizer-state validation on checkpoint resume, and auto-derived the epoch count needed to reach max training steps.
    - Maintenance: Removed unused imports and dead code.
