@@ -188,6 +188,31 @@ class TestJointEvaluate(unittest.TestCase):
         self.assertAlmostEqual(joint_nll.item(), exp_joint.item(), places=4)
         self.assertEqual(cnt, 5)
 
+    def test_lmbda_boundary_values(self):
+        """Test λ=0.0 and λ=1.0 return pure component NLLs (regression: math.log(0) crash)"""
+
+        torch.manual_seed(0)
+        mock_lm_logits = torch.randn(1, 6, 50)
+        mock_knn_logits = torch.randn(1, 6, 50)
+        labels = torch.tensor([[1, 2, 3, 4, 5, 6]])
+        mock_batch = {"labels": labels}
+        shift_labels = labels[:, 1:]
+        lm_lp = torch.log_softmax(mock_lm_logits[:, :-1], dim=-1)
+        knn_lp = torch.log_softmax(mock_knn_logits[:, :-1], dim=-1)
+        exp_lm = -lm_lp.gather(-1, shift_labels.unsqueeze(-1)).sum()
+        exp_knn = -knn_lp.gather(-1, shift_labels.unsqueeze(-1)).sum()
+        joint_nll_0, lm_nll_0, cnt = joint_evaluate(
+            mock_lm_logits, mock_knn_logits, mock_batch, lmbda=0.0
+        )
+        joint_nll_1, lm_nll_1, _ = joint_evaluate(
+            mock_lm_logits, mock_knn_logits, mock_batch, lmbda=1.0
+        )
+        self.assertAlmostEqual(joint_nll_0.item(), exp_lm.item(),  places=4)
+        self.assertAlmostEqual(joint_nll_1.item(), exp_knn.item(), places=4)
+        self.assertAlmostEqual(lm_nll_0.item(),    exp_lm.item(),  places=4)
+        self.assertAlmostEqual(lm_nll_1.item(),    exp_lm.item(),  places=4)
+        self.assertEqual(cnt, 5)
+
 
 class TestLoadModels(unittest.TestCase):
     """Test model loading functionality"""
