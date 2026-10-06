@@ -95,8 +95,8 @@ The pipeline runs on `Python 3.11` with `PyTorch (CUDA 12.8)` and `Unsloth` for 
    pip install unsloth
    ```
 
-   > [!CAUTION]
-   > On Windows, the install order is critical: **pip** re-resolves shared dependencies, so installing *PyTorch* or *Unsloth* first can silently upgrade/downgrade the pinned packages from [<kbd><u>requirements.txt</u></kbd>](requirements.txt), resulting in **CUDA DLL** conflicts and memory-isolation crashes (**Hypervisor Errors**).
+> [!CAUTION]
+> On Windows, the install order is critical: **pip** re-resolves shared dependencies, so installing *PyTorch* or *Unsloth* first can silently upgrade/downgrade the pinned packages from [<kbd><u>requirements.txt</u></kbd>](requirements.txt), resulting in **CUDA DLL** conflicts and memory-isolation crashes (**Hypervisor Errors**).
 
 3. <kbd>***Authenticate with Hugging Face***</kbd>
    <u>*Setup Steps*</u>:
@@ -110,8 +110,8 @@ The pipeline runs on `Python 3.11` with `PyTorch (CUDA 12.8)` and `Unsloth` for 
    huggingface-cli login   # Paste your Access Token when prompted
    ```
 
-   > [!IMPORTANT]
-   > Authentication via `huggingface-cli login` is required to access the gated **Open Legal Data** dataset. However, as this pipeline uses **Unsloth**-optimized model weights (including Gemma 3), there is no need to accept separate model license agreements on HuggingFace.
+> [!IMPORTANT]
+> Authentication via `huggingface-cli login` is required to access the gated **Open Legal Data** dataset. However, as this pipeline uses **Unsloth**-optimized model weights (including Gemma 3), there is no need to accept separate model license agreements on HuggingFace.
 
 ## <em>Testing</em>
 To run **all** test scripts in the [<kbd>MemDec-Universal/`test`</kbd>](./test) directory:
