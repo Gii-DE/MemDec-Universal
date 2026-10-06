@@ -1,0 +1,13 @@
+# Placeholder — keeps this directory in git while its contents stay ignored.
+
+# Pipeline logs land here (see README):
+#
+#   /outputs
+#       /logs
+#           /0_dataset.log
+#           /1_preparation.log
+#           /2_tokenization.log
+#           /3_pretraining.log
+#           /4_training.log
+#           /5a_testing.log
+#           /5b_evaluation.log

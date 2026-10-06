@@ -1,0 +1,8 @@
+# Placeholder — keeps this directory in git while its contents stay ignored.
+
+# Test & evaluation results land here (see README):
+#
+#   /outputs
+#       /test_results
+#           /test_results_<model>_<timestamp>.json
+#           /ppl_results_<model>_<timestamp>.json
