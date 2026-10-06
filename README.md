@@ -277,7 +277,7 @@ python -m unittest discover -s test -v
 ```
 
 > [!IMPORTANT]
-> To run **individual** test scripts, refer to the **Terminal Commands** listed in the [<kbd><u>Main Components</u></kbd>](#main-components).
+> To run **individual** test scripts, refer to the **Terminal Commands** listed in [<kbd><u>Main Components</u></kbd>](#main-components).
 
 ---
 ## <em>Contributing & Contact</em>
