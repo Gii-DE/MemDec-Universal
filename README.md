@@ -10,167 +10,166 @@ MemDec offers a parametric alternative to *Retrieval-Augmented Generation* (RAG)
 
 ---
 <a id="main-components"></a>
-## <em>Main Components (Features)</em>
-![](/assets/project_features.md)
+## [<em>`Main Components (Features)`</em>](/assets/project_features.md)
 
 > [!CAUTION]
 > For readability, the <kbd>***Features Table***</kbd> above is shown in a condensed version. The full <u><kbd>Terminal Commands</kbd></u> for each script can be copied from here:
 >
 > <details><summary><kbd><strong>utils.py</strong></kbd></summary>
 > 
-> <kbd><b>TEST</b></kbd>
-> <code>python -m unittest test.test_utils -v</code><br>
-> <kbd><b>RUN</b></kbd>
-> <u>1. Set Default LLM Model <em><small>(default "gemma3")</small></em></u>:
-> <code>python -m src.utils &lt;model_name&gt;</code>
-> ℹ️ <code>python -m src.utils qwen3.5</code>
-> ℹ️ <code>python -m src.utils smollm3</code>
-> <u>2. Show Current Default Model</u>:
+> <kbd><b>TEST</b></kbd><br>
+> <code>python -m unittest test.test_utils -v</code><br><br>
+> <kbd><b>RUN</b></kbd><br>
+> <u>1. Set Default LLM Model <em><small>(default "gemma3")</small></em></u>:<br>
+> <code>python -m src.utils &lt;model_name&gt;</code><br>
+> ℹ️ <code>python -m src.utils qwen3.5</code><br>
+> ℹ️ <code>python -m src.utils smollm3</code><br><br>
+> <u>2. Show Current Default Model</u>:<br>
 > ℹ️ <code>python -m src.utils --show</code>
 > </details>
 >
 > <details><summary><kbd><strong>step0_dataset.py</strong></kbd></summary>
 > 
-> <kbd><b>TEST</b></kbd>
-> <code>python -m unittest test.test_step0_dataset -v</code><br>
-> <kbd><b>RUN</b></kbd>
-> <u>Download &amp; Clean File-Based Dataset</u>:
-> <code>python -m src.step0_dataset &lt;dataset_name&gt;</code>
-> ℹ️ URL: <code>python -m src.step0_dataset bverfg_decisions</code>
+> <kbd><b>TEST</b></kbd><br>
+> <code>python -m unittest test.test_step0_dataset -v</code><br><br>
+> <kbd><b>RUN</b></kbd><br>
+> <u>Download &amp; Clean File-Based Dataset</u>:<br>
+> <code>python -m src.step0_dataset &lt;dataset_name&gt;</code><br>
+> ℹ️ URL: <code>python -m src.step0_dataset bverfg_decisions</code><br>
 > ℹ️ Local: <code>python -m src.step0_dataset gerdalir_queries</code>
 > </details>
 >
 > <details><summary><kbd><strong>step0_data_management.py</strong></kbd></summary>
 >
-> <kbd><b>TEST</b></kbd>
-> <code>python -m unittest test.test_step0_data_management -v</code><br>
-> <kbd><b>RUN</b></kbd>
-> <u>Combine Cleaned Datasets with Corpus Name</u>:
-> <code>python -m src.step0_data_management --corpus-name &lt;corpus_name&gt; &lt;dataset1&gt; &lt;dataset2&gt; &lt;datasetN&gt;</code>
+> <kbd><b>TEST</b></kbd><br>
+> <code>python -m unittest test.test_step0_data_management -v</code><br><br>
+> <kbd><b>RUN</b></kbd><br>
+> <u>Combine Cleaned Datasets with Corpus Name</u>:<br>
+> <code>python -m src.step0_data_management --corpus-name &lt;corpus_name&gt; &lt;dataset1&gt; &lt;dataset2&gt; &lt;datasetN&gt;</code><br>
 > ℹ️<code>python -m src.step0_data_management --corpus-name test_corpus bverfg_decisions gerdalir_queries</code>
 > </details>
 >
 > <details><summary><kbd><strong>step1_cleaning.py</strong></kbd></summary>
 >
-> <kbd><b>TEST</b></kbd>
-> <code>python -m unittest test.test_step1_cleaning -v</code><br>
-> <kbd><b>RUN</b></kbd>
-> <u>1a. Clean HuggingFace Dataset</u>:
-> <code>python -m src.step1_cleaning --hf-dataset &lt;dataset_name&gt;</code>
-> ℹ️ <code>python -m src.step1_cleaning --hf-dataset DomainLLM/german-law-qa</code>
-> <u>1b. With Specific Config (Subsets)</u>:
-> <code>python -m src.step1_cleaning --hf-config &lt;config&gt;</code>
-> ℹ️ <code>python -m src.step1_cleaning --hf-config dump-20221018-10k</code> or
-> <code>… --hf-config cases2022_10k</code>
-> <u>1c. With Duplicated Config</u>:
-> <code>python -m src.step1_cleaning --hf-dataset &lt;dataset_name&gt; --hf-config &lt;config&gt;</code>
-> ℹ️ <code>python -m src.step1_cleaning --hf-dataset openlegaldata/court-decisions-germany --hf-config dump-20260520-10k</code> or
-> <code>… --hf-dataset openlegaldata/court-decisions-germany --hf-config cases2026_10k</code>
-> ℹ️ <code>python -m src.step1_cleaning --hf-dataset openlegaldata/laws-germany --hf-config dump-20260520-10k</code> or <br><code>… --hf-dataset openlegaldata/laws-germany --hf-config laws_germany_10k</code>
-> 📌Only via <small><kbd>pipeline_config.yaml</kbd></small>:
-> ℹ️ <code>min_text_length</code>, <code>min_alpha_ratio</code>, <code>chunk_size</code>, <code>check_duplicates</code><code>check_duplicates</code>
+> <kbd><b>TEST</b></kbd><br>
+> <code>python -m unittest test.test_step1_cleaning -v</code><br><br>
+> <kbd><b>RUN</b></kbd><br>
+> <u>1a. Clean HuggingFace Dataset</u>:<br>
+> <code>python -m src.step1_cleaning --hf-dataset &lt;dataset_name&gt;</code><br>
+> ℹ️ <code>python -m src.step1_cleaning --hf-dataset DomainLLM/german-law-qa</code><br>
+> <u>1b. With Specific Config (Subsets)</u>:<br>
+> <code>python -m src.step1_cleaning --hf-config &lt;config&gt;</code><br>
+> ℹ️ <code>python -m src.step1_cleaning --hf-config dump-20221018-10k</code> or<br>
+> <code>… --hf-config cases2022_10k</code><br>
+> <u>1c. With Duplicated Config</u>:<br>
+> <code>python -m src.step1_cleaning --hf-dataset &lt;dataset_name&gt; --hf-config &lt;config&gt;</code><br>
+> ℹ️ <code>python -m src.step1_cleaning --hf-dataset openlegaldata/court-decisions-germany --hf-config dump-20260520-10k</code> or<br>
+> <code>… --hf-dataset openlegaldata/court-decisions-germany --hf-config cases2026_10k</code><br>
+> ℹ️ <code>python -m src.step1_cleaning --hf-dataset openlegaldata/laws-germany --hf-config dump-20260520-10k</code> or <br><code>… --hf-dataset openlegaldata/laws-germany --hf-config laws_germany_10k</code><br><br>
+> 📌Only via <small><kbd>pipeline_config.yaml</kbd></small>:<br>
+> ℹ️ <code>min_text_length</code>, <code>min_alpha_ratio</code>, <code>chunk_size</code>, <code>check_duplicates</code>
 > </details>
 >
 > <details><summary><kbd><strong>step2_tokenization.py</strong></kbd></summary>
 >
-> <kbd><b>TEST</b></kbd>
-> <code>python -m unittest test.test_step2_tokenization -v</code><br>
-> <kbd><b>RUN</b></kbd>
-> <u>1a. Tokenize Cleaned Dataset</u>:
-> <code>python -m src.step2_tokenization &lt;dataset_cleaned&gt;</code>
-> ℹ️ <code>python -m src.step2_tokenization cases2026_10k</code>
-> <u>1b. Override Base LLM</u>:
-> <code>python -m src.step2_tokenization &lt;dataset_cleaned&gt; --model &lt;model_name&gt;</code>
-> ℹ️ <code>python -m src.step2_tokenization cases2026_10k --model gemma3-1b</code>
-> <u>2. Custom Params</u>:
-> <code>… --train-test-split &lt;ratio&gt; --num-workers &lt;n&gt;</code>
+> <kbd><b>TEST</b></kbd><br>
+> <code>python -m unittest test.test_step2_tokenization -v</code><br><br>
+> <kbd><b>RUN</b></kbd><br>
+> <u>1a. Tokenize Cleaned Dataset</u>:<br>
+> <code>python -m src.step2_tokenization &lt;dataset_cleaned&gt;</code><br>
+> ℹ️ <code>python -m src.step2_tokenization cases2026_10k</code><br>
+> <u>1b. Override Base LLM</u>:<br>
+> <code>python -m src.step2_tokenization &lt;dataset_cleaned&gt; --model &lt;model_name&gt;</code><br>
+> ℹ️ <code>python -m src.step2_tokenization cases2026_10k --model gemma3-1b</code><br><br>
+> <u>2. Custom Params</u>:<br>
+> <code>… --train-test-split &lt;ratio&gt; --num-workers &lt;n&gt;</code><br>
 > ℹ️ <code>… --train-test-split 0.9 --num-workers 4</code>
 > </details>
 >
 > <details><summary><kbd><strong>step3_pretraining.py</strong></kbd></summary>
 >
-> <kbd><b>TEST</b></kbd>
-> <code>python -m unittest test.test_step3_pretraining -v</code><br>
-> <kbd><b>RUN</b></kbd>
-> <u>1a. Knowledge Base Creation</u>:
-> <code>python -m src.step3_pretraining &lt;dataset_tokenized&gt;</code>
-> ℹ️ <code>python -m src.step3_pretraining cases2026_10k_tokenized-gemma3</code>
-> <u>1b. Override Base LLM</u>:
-> <code>python -m src.step3_pretraining &lt;dataset_tokenized&gt; --model &lt;model_name&gt;</code>
-> ℹ️ <code>python -m src.step3_pretraining cases2026_10k_tokenized-gemma3 --model gemma3-1b</code>
-> <u>2. Custom Params</u>:
-> <code>… --batch-size &lt;n&gt; --seed &lt;X&gt; --ncentroids &lt;n&gt; --num-keys-to-add-at-a-time &lt;int&gt;</code>
+> <kbd><b>TEST</b></kbd><br>
+> <code>python -m unittest test.test_step3_pretraining -v</code><br><br>
+> <kbd><b>RUN</b></kbd><br>
+> <u>1a. Knowledge Base Creation</u>:<br>
+> <code>python -m src.step3_pretraining &lt;dataset_tokenized&gt;</code><br>
+> ℹ️ <code>python -m src.step3_pretraining cases2026_10k_tokenized-gemma3</code><br>
+> <u>1b. Override Base LLM</u>:<br>
+> <code>python -m src.step3_pretraining &lt;dataset_tokenized&gt; --model &lt;model_name&gt;</code><br>
+> ℹ️ <code>python -m src.step3_pretraining cases2026_10k_tokenized-gemma3 --model gemma3-1b</code><br><br>
+> <u>2. Custom Params</u>:<br>
+> <code>… --batch-size &lt;n&gt; --seed &lt;X&gt; --ncentroids &lt;n&gt; --num-keys-to-add-at-a-time &lt;int&gt;</code><br>
 > ℹ️ <code>… --batch-size 32 --seed 777 --ncentroids 4096 --num-keys-to-add-at-a-time 1_000_000</code>
 > </details>
 >
 > <details><summary><kbd><strong>step4_training.py</strong></kbd></summary>
 >
-> <kbd><b>TEST</b></kbd>
-> <code>python -m unittest test.test_step4_training -v</code><br>
-> <kbd><b>RUN</b></kbd>
-> <u>1a. MemDec Training</u>:
-> <code>python -m src.step4_training &lt;dataset_tokenized&gt;</code>
-> ℹ️ <code>python -m src.step4_training cases2026_10k_tokenized-gemma3</code>
-> <u>1b. Without Unsloth <small><em>(plain HF/PyTorch)</em></small></u>:
-> <code>python -m src.step4_training &lt;dataset_tokenized&gt; --no-unsloth</code>
-> ℹ️ <code>python -m src.step4_training cases2026_10k_tokenized-gemma3 --no-unsloth</code>
-> <u>1c. Override Base LLM</u>:
-> <code>python -m src.step4_training &lt;dataset_tokenized&gt; --model &lt;model_name&gt;</code>
-> ℹ️ <code>python -m src.step4_training cases2026_10k_tokenized-gemma3 --model gemma3-1b</code>
-> <u>1d. With Specific Checkpoint</u>:
-> <code>python -m src.step4_training &lt;dataset_tokenized&gt; --checkpoint &lt;step_X&gt;</code>
-> ℹ️ <code>python -m src.step4_training cases2026_10k_tokenized-gemma3 --checkpoint step_500</code>
-> <u>2. MemDec Params</u>:
-> <code>… --k-neighbors &lt;k&gt; --alpha &lt;float&gt; --lmbda &lt;float&gt;</code>
-> ℹ️ <code>… --k-neighbors 8 --alpha 0.7 --lmbda 0.5</code>
-> <u>3. Training Params</u>:
-> <code>… --max-steps &lt;X&gt; --checkpointing-steps &lt;interval&gt; --num-train-epochs &lt;X&gt; --batch-size &lt;n&gt; --per-device-train-batch-size &lt;n&gt; --gradient-accumulation-steps &lt;n&gt; --learning-rate &lt;rate&gt; --seed &lt;X&gt;</code>
+> <kbd><b>TEST</b></kbd><br>
+> <code>python -m unittest test.test_step4_training -v</code><br><br>
+> <kbd><b>RUN</b></kbd><br>
+> <u>1a. MemDec Training</u>:<br>
+> <code>python -m src.step4_training &lt;dataset_tokenized&gt;</code><br>
+> ℹ️ <code>python -m src.step4_training cases2026_10k_tokenized-gemma3</code><br>
+> <u>1b. Without Unsloth <small><em>(plain HF/PyTorch)</em></small></u>:<br>
+> <code>python -m src.step4_training &lt;dataset_tokenized&gt; --no-unsloth</code><br>
+> ℹ️ <code>python -m src.step4_training cases2026_10k_tokenized-gemma3 --no-unsloth</code><br>
+> <u>1c. Override Base LLM</u>:<br>
+> <code>python -m src.step4_training &lt;dataset_tokenized&gt; --model &lt;model_name&gt;</code><br>
+> ℹ️ <code>python -m src.step4_training cases2026_10k_tokenized-gemma3 --model gemma3-1b</code><br>
+> <u>1d. With Specific Checkpoint</u>:<br>
+> <code>python -m src.step4_training &lt;dataset_tokenized&gt; --checkpoint &lt;step_X&gt;</code><br>
+> ℹ️ <code>python -m src.step4_training cases2026_10k_tokenized-gemma3 --checkpoint step_500</code><br><br>
+> <u>2. MemDec Params</u>:<br>
+> <code>… --k-neighbors &lt;k&gt; --alpha &lt;float&gt; --lmbda &lt;float&gt;</code><br>
+> ℹ️ <code>… --k-neighbors 8 --alpha 0.7 --lmbda 0.5</code><br><br>
+> <u>3. Training Params</u>:<br>
+> <code>… --max-steps &lt;X&gt; --checkpointing-steps &lt;interval&gt; --num-train-epochs &lt;X&gt; --batch-size &lt;n&gt; --per-device-train-batch-size &lt;n&gt; --gradient-accumulation-steps &lt;n&gt; --learning-rate &lt;rate&gt; --seed &lt;X&gt;</code><br>
 > ℹ️ <code>… --max-steps 1500 --checkpointing-steps 100 --num-train-epochs 23 --batch-size 4 --per-device-train-batch-size 4 --gradient-accumulation-steps 4 --learning-rate 5e-5 --seed 777</code>
 > </details>
 >
 > <details><summary><kbd><strong>step5_testing.py</strong></kbd></summary>
 >
-> <kbd><b>TEST</b></kbd>
-> <code>python -m unittest test.test_step5_testing -v</code><br>
-> <kbd><b>RUN</b></kbd>
-> <u>1a. Test with Checkpoint</u>:
-> <code>python -m src.step5_testing --checkpoint &lt;step_X&gt;</code>
-> ℹ️ <code>python -m src.step5_testing --checkpoint step_1000</code>
-> <u>1b. Override Base LLM <small><em>(uses latest Checkpoint-Save)</em></small></u>:
-> <code>python -m src.step5_testing --model &lt;model_name&gt;</code>
-> ℹ️ <code>python -m src.step5_testing --model gemma3-1b</code>
-> <u>2. MemDec Params</u>:
-> <code>… --knn-temp &lt;float&gt; --lmbda &lt;float&gt;</code>
-> ℹ️ <code>… --knn-temp 0.8 --lmbda 0.5</code>
-> <u>3. Generation Params</u>:
-> <code>… --max-new-tokens &lt;X&gt; --repetition-penalty &lt;float&gt; --do-sample --temperature &lt;float&gt; --top-p &lt;float&gt; --top-k &lt;n&gt;</code>
-> ℹ️ <code>… --max-new-tokens 200 --repetition-penalty 1.5</code>
-> ℹ️ <code>… --do-sample --temperature 0.8 --top-p 0.9 --top-k 40</code> (sampling instead of greedy)
-> <u>4. Custom Params</u>:
-> <code>… --scenarios &lt;scenario&gt; --tasks &lt;task&gt; --save-results --compare-base</code>
-> ℹ️ <code>… --scenarios withdrawals employment --tasks question_answering summarization</code>
+> <kbd><b>TEST</b></kbd><br>
+> <code>python -m unittest test.test_step5_testing -v</code><br><br>
+> <kbd><b>RUN</b></kbd><br>
+> <u>1a. Test with Checkpoint</u>:<br>
+> <code>python -m src.step5_testing --checkpoint &lt;step_X&gt;</code><br>
+> ℹ️ <code>python -m src.step5_testing --checkpoint step_1000</code><br>
+> <u>1b. Override Base LLM <small><em>(uses latest Checkpoint-Save)</em></small></u>:<br>
+> <code>python -m src.step5_testing --model &lt;model_name&gt;</code><br>
+> ℹ️ <code>python -m src.step5_testing --model gemma3-1b</code><br><br>
+> <u>2. MemDec Params</u>:<br>
+> <code>… --knn-temp &lt;float&gt; --lmbda &lt;float&gt;</code><br>
+> ℹ️ <code>… --knn-temp 0.8 --lmbda 0.5</code><br><br>
+> <u>3. Generation Params</u>:<br>
+> <code>… --max-new-tokens &lt;X&gt; --repetition-penalty &lt;float&gt; --do-sample --temperature &lt;float&gt; --top-p &lt;float&gt; --top-k &lt;n&gt;</code><br>
+> ℹ️ <code>… --max-new-tokens 200 --repetition-penalty 1.5</code><br>
+> ℹ️ <code>… --do-sample --temperature 0.8 --top-p 0.9 --top-k 40</code> (sampling instead of greedy)<br><br>
+> <u>4. Custom Params</u>:<br>
+> <code>… --scenarios &lt;scenario&gt; --tasks &lt;task&gt; --save-results --compare-base</code><br>
+> ℹ️ <code>… --scenarios withdrawals employment --tasks question_answering summarization</code><br>
 > ⚠️ <code>--save-results</code> / <code>--compare-base</code> invert the config default in <small><kbd>pipeline_config.yaml</kbd></small>, leading to <em>disabled</em> result saving & base-model comparison.
 > </details>
 >
 > <details><summary><kbd><strong>step5_evaluation.py</strong></kbd></summary>
 >
-> <kbd><b>TEST</b></kbd>
-> <code>python -m unittest test.test_step5_evaluation -v</code><br>
-> <kbd><b>RUN</b></kbd>
-> <u>1a. PPL Evaluation</u>:
-> <code>python -m src.step5_evaluation &lt;dataset_tokenized&gt; --checkpoint &lt;step_X&gt;</code>
-> ℹ️ <code>python -m src.step5_evaluation cases2026_10k_tokenized-gemma3 --checkpoint step_1000</code>
-> <u>1b. Override Base LLM</u>:
-> <code>python -m src.step5_evaluation &lt;dataset_tokenized&gt; --model &lt;model_name&gt;</code>
-> ℹ️ <code>python -m src.step5_evaluation cases2026_10k_tokenized-gemma3 --model gemma3-1b</code>
-> <u>2. MemDec Params</u>:
-> <code>… --lmbda &lt;float&gt; --knn-temp &lt;float&gt;</code>
-> ℹ️ <code>… --lmbda 0.3 --knn-temp 1.0</code>
-> <u>3. Evaluation Params</u>:
-> <code>… --split {train|validation|test} --max-examples &lt;X&gt; --batch-size &lt;n&gt; --seed &lt;X&gt;</code>
-> ℹ️ <code>… --split test --max-examples 100 --batch-size 8 --seed 777</code>
-> <u>4. Custom Params</u>:
-> <code>… --save-results --compare-base</code>
+> <kbd><b>TEST</b></kbd><br>
+> <code>python -m unittest test.test_step5_evaluation -v</code><br><br>
+> <kbd><b>RUN</b></kbd><br>
+> <u>1a. PPL Evaluation</u>:<br>
+> <code>python -m src.step5_evaluation &lt;dataset_tokenized&gt; --checkpoint &lt;step_X&gt;</code><br>
+> ℹ️ <code>python -m src.step5_evaluation cases2026_10k_tokenized-gemma3 --checkpoint step_1000</code><br>
+> <u>1b. Override Base LLM</u>:<br>
+> <code>python -m src.step5_evaluation &lt;dataset_tokenized&gt; --model &lt;model_name&gt;</code><br>
+> ℹ️ <code>python -m src.step5_evaluation cases2026_10k_tokenized-gemma3 --model gemma3-1b</code><br><br>
+> <u>2. MemDec Params</u>:<br>
+> <code>… --lmbda &lt;float&gt; --knn-temp &lt;float&gt;</code><br>
+> ℹ️ <code>… --lmbda 0.3 --knn-temp 1.0</code><br><br>
+> <u>3. Evaluation Params</u>:<br>
+> <code>… --split {train|validation|test} --max-examples &lt;X&gt; --batch-size &lt;n&gt; --seed &lt;X&gt;</code><br>
+> ℹ️ <code>… --split test --max-examples 100 --batch-size 8 --seed 777</code><br><br>
+> <u>4. Custom Params</u>:<br>
+> <code>… --save-results --compare-base</code><br>
 > ⚠️ <code>--save-results</code> / <code>--compare-base</code> invert the config default in <small><kbd>pipeline_config.yaml</kbd></small>, leading to <em>disabled</em> result saving & base-model comparison.
 > </details>
 
