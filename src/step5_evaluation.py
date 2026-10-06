@@ -148,10 +148,15 @@ def joint_evaluate(lm_logits, knn_logits, batch, lmbda):
                 - shift_lm.logsumexp(-1).float())
     knn_logp = (shift_knn.gather(-1, safe_labels).squeeze(-1).float()
                 - shift_knn.logsumexp(-1).float())
-    joint_logp = torch.logaddexp(
-        lm_logp  + math.log(1 - lmbda),
-        knn_logp + math.log(lmbda),
-    )
+    if lmbda <= 0.0:
+        joint_logp = lm_logp
+    elif lmbda >= 1.0:
+        joint_logp = knn_logp
+    else:
+        joint_logp = torch.logaddexp(
+            lm_logp  + math.log(1 - lmbda),
+            knn_logp + math.log(lmbda),
+        )
     lm_nll    = -lm_logp[mask].sum()
     joint_nll = -joint_logp[mask].sum()
     return joint_nll, lm_nll, total_tokens
