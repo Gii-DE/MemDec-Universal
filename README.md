@@ -208,7 +208,7 @@ MemDec-Universal/
 ├── outputs/                           # Output Files
 │   ├── logs/                                # Script Logs (while running "stepX".py)
 │   └── step_5000/                           # Trained Model Weights
-├── assets/                            # README Media
+├── assets/                            # README Media & Tables
 ├── .env.example                       # Environment Variables (Template)
 ├── .gitattributes                     # Git Attributes (LFS for large files)
 ├── .gitignore                         # Git Ignore (files to exclude from commit)
