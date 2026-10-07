@@ -1,5 +1,10 @@
 # Placeholder — keeps this directory in git while dataset files stay untracked.
 
+# ============================================================================
+# MemDec-Universal | © 2026 @Gii-DE (https://g-dea.com)
+# Source: https://github.com/Gii-DE/MemDec-Universal | License: Apache-2.0
+# ============================================================================
+
 # Place your custom dataset files here (.json, .jsonl, .csv, .tsv or tar.gz):
 #
 #   /legal_usecase
@@ -13,5 +18,3 @@
 #           /<dataset>.csv.gz
 #           /<dataset>.tsv.gz
 #           /<dataset>.tar.gz
-
-# Register them in dataset_config.yaml (see README/HowTo).

@@ -1,4 +1,9 @@
-# Placeholder — keeps this directory in git while its contents stay ignored.
+# Placeholder — keeps this directory in git while dataset files stay untracked.
+
+# ============================================================================
+# MemDec-Universal | © 2026 @Gii-DE (https://g-dea.com)
+# Source: https://github.com/Gii-DE/MemDec-Universal | License: Apache-2.0
+# ============================================================================
 
 # Downloaded, extracted, cleaned & tokenized datasets land here (see README):
 #
