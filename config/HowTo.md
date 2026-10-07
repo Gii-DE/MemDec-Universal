@@ -33,7 +33,7 @@ MemDec-Universal\config\
 
 2. **Edit the config files** in <kbd>config/`<your_domain>_usecase`</kbd> (details for each file are explained below):
    - <u>Required:</u> [`dataset_config.yaml`](#config-dataset) and [`pipeline_config.yaml`](#config-pipeline). 
-   - <u>Optional:</u> [`sources.json`](#config-sources) & [`test_cases.yaml`](#config-test-cases) (only needed for `step5_testing`, which `step5_evaluation` depends on).
+   - <u>Optional:</u> [`sources.json`](#config-sources) & [`test_cases.yaml`](#config-test-cases) (only needed for `step5_testing`).
 
 3. **Activate the use-case** in [`.env`](/.env) so that the pipeline loads your use-case folder instead of the default:
    ```bash
