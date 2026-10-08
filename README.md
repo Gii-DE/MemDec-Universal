@@ -206,8 +206,9 @@ MemDec-Universal/
 ├── dataset/                           # Datasets (cleaned & tokenized)
 ├── knowledge_base/                    # KNN Datastore & FAISS Index
 ├── outputs/                           # Output Files
-│   ├── logs/                                # Script Logs (while running "stepX".py)
-│   └── step_5000/                           # Trained Model Weights
+│   ├── logs/                               # Script Logs (while running "stepX".py)
+│   ├── test_results/                       # Test & Evaluation Results
+│   └── step_5000/                          # Trained Model Weights
 ├── assets/                            # README Media & Tables
 ├── .env.example                       # Environment Variables (Template)
 ├── .gitattributes                     # Git Attributes (LFS for large files)
