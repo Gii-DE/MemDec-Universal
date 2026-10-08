@@ -4,7 +4,7 @@ This guide explains how to configure the MemDec domain adapter for a custom know
 
 ## <em>Directory Structure</em>
 ```bash
-MemDec-Universal\config\
+MemDec-Universal/config/
 ├── custom_usecase/           # Use-Case Template
 │   ├── data/                   # Drop local dataset files here (.json/.jsonl/.csv/.tsv/.gz)
 │   ├── dataset_config.yaml     # Define the raw data sources (step 0-1)
