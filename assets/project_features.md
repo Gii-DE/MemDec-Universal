@@ -11,7 +11,7 @@
     <tr>
       <td><a href="../src/utils.py"><kbd>utils.py</kbd></a></td>
       <td>
-        Shared helper module used by every pipeline step. Its most important job is picking the correct base LLM per step through a fixed priority chain: <code>CLI flag &gt; step config &gt; tokenized-dataset info &gt; checkpoint &gt; pipeline/env default</code>.<br><br>
+        Shared helper module used by every pipeline step. Its most important job is picking the correct base LLM per step through a fixed priority chain: <code>.env MEMDEC_MODEL &gt; CLI flag &gt; step config &gt; pipeline default &gt; tokenized-dataset & checkpoint info &gt; system default (fallback)</code>.<br><br>
         • Logging to <code>outputs/logs/</code> and the console<br>
         • Load the config files (<code>pipeline_config.yaml</code>, <code>dataset_config.yaml</code>) and <code>.env</code> settings<br>
         • Resolve model references (including HuggingFace model names) via <code>model_config.json</code><br>

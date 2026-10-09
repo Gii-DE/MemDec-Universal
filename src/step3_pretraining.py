@@ -428,7 +428,7 @@ def parse_arguments() -> argparse.Namespace:
             config_tokenized_data = get_pipeline_value("steps.step3_pretraining.tokenized_data", None) or TOKENIZED_DATA_DIR
         except Exception:
             config_tokenized_data = None
-    # Determine base_model: CLI > step config > tokenized data > pipeline default > env
+    # Determine base_model: .env > CLI > step config > pipeline default > tokenized data > system default
     config_base_model = resolve_base_model(
         cli_model=early_args.model,
         step_config_key="steps.step3_pretraining",
@@ -473,6 +473,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('--probe', type=int, default=default_config.probe,
                        help=f'[FIXED] Number of probes for KNN [default: {default_config.probe}]')
     args = parser.parse_args()
+    args.model = config_base_model
     if not args.tokenized_data:
         parser.error("tokenized_data is required: pass it or set steps.step3_pretraining.tokenized_data / pipeline.corpus_name in pipeline_config.yaml")
     if args.knn_datastore_path != default_config.knn_datastore_path:

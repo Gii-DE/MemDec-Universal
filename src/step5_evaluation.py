@@ -359,7 +359,7 @@ def parse_arguments() -> argparse.Namespace:
         if not config_tokenized_data:
             config_tokenized_data = default_config.tokenized_data_path
     config_checkpoint = get_pipeline_value("steps.step5_evaluation.checkpoint", default_config.checkpoint_dir)
-    # Determine base_model: CLI > step config > tokenized data > checkpoint (CLI or pipeline config) > pipeline default > env
+    # Determine base_model: .env > CLI > step config > pipeline default > tokenized data > checkpoint > system default
     config_base_model = resolve_base_model(
         cli_model=early_args.model,
         step_config_key="steps.step5_evaluation",
@@ -406,6 +406,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--results-dir", type=str, default=default_config.results_dir,
                         help=f"[FIXED] Where to write result JSON files [default: {default_config.results_dir}]")
     args = parser.parse_args()
+    args.model = config_base_model
     if args.output_dir != default_config.output_dir:
         parser.error(f"--output-dir is fixed to '{default_config.output_dir}' and cannot be changed via CLI.")
     if args.results_dir != default_config.results_dir:

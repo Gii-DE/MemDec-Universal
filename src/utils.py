@@ -547,19 +547,15 @@ def resolve_base_model(
     """
     Resolve the base model name according to the strict hierarchy:
 
-    CLI > per-step pipeline config (base_model) > tokenized dataset metadata >
-    checkpoint name > pipeline.models.default_model > env default (MEMDEC_MODEL)
-
-    Auto-derivation from tokenized_data or checkpoint takes precedence over the global
-    pipeline default: a base model that does not match the dataset tokenizer or checkpoint
-    cannot consume them anyway. An explicit CLI or per-step config choice is never
-    silently overridden by auto-derivation.
+    .env MEMDEC_MODEL > CLI --model > per-step pipeline config (base_model) >
+    pipeline.models.default_model > tokenized dataset metadata > checkpoint's config.json >
+    hard-coded system default 'gemma3'
 
     Args:
-        cli_model: Value passed via --model on the CLI (highest priority).
+        cli_model: Value passed via --model on the CLI (outranked only by .env).
         step_config_key: Pipeline config key for the step (e.g. "steps.step5_evaluation").
         tokenized_data: Tokenized dataset name/path for auto-derivation.
-        checkpoint: Checkpoint name/path for auto-derivation.
+        checkpoint: Checkpoint name/path; auto-derived from its config.json first, then from name heuristics.
         output_dir: Output directory used to resolve relative checkpoint names.
 
     Returns:
@@ -568,19 +564,31 @@ def resolve_base_model(
     Raises:
         ValueError: If no source can be resolved or the model choice is unsupported.
     """
-    # 1. CLI override (highest priority)
+    # 1. Env override — global user setting (.env MEMDEC_MODEL, highest priority)
+    env_model = os.getenv("MEMDEC_MODEL")
+    if env_model:
+        full_name = get_model_full_name(env_model.strip().strip("'\""))
+        logger.info(f"✅ Base model resolved from .env MEMDEC_MODEL: {full_name}")
+        return full_name
+    # 2. CLI override — reached only when MEMDEC_MODEL is unset (.env outranks CLI)
     if cli_model:
         full_name = get_model_full_name(cli_model)
         logger.info(f"✅ Base model resolved from CLI: {full_name}")
         return full_name
-    # 2. Per-step pipeline config
+    # 3. Config-file's per-step pipeline config (for specific step targets)
     if step_config_key:
         step_model = get_pipeline_value(f"{step_config_key}.base_model", None)
         if step_model:
             full_name = get_model_full_name(step_model)
             logger.info(f"✅ Base model resolved from {step_config_key}.base_model: {full_name}")
             return full_name
-    # 3. Auto-derive from tokenized dataset metadata
+    # 4. Config-file's pipeline-wide default model (if step targets stay the same for usecase)
+    pipeline_default = get_pipeline_value("pipeline.models.default_model", None)
+    if pipeline_default:
+        full_name = get_model_full_name(pipeline_default)
+        logger.info(f"✅ Base model resolved from pipeline.models.default_model: {full_name}")
+        return full_name
+    # 5. Auto-derive from tokenized dataset (checks its metadata for base model consistency)
     if tokenized_data:
         resolved_path = _resolve_named_path(tokenized_data, DATA_DIR, "tokenized-data")
         if resolved_path:
@@ -589,10 +597,15 @@ def resolve_base_model(
                 full_name = get_model_full_name(metadata_model)
                 logger.info(f"✅ Base model auto-derived from tokenized data metadata: {full_name}")
                 return full_name
-        full_name = get_model_full_name(tokenized_data)
-        logger.info(f"✅ Base model auto-derived from tokenized data name: {full_name}")
-        return full_name
-    # 4. Auto-derive from checkpoint (config.json first, then name heuristics)
+        keyword = extract_model_identifier(tokenized_data, return_default=False)
+        if keyword:
+            full_name = get_model_full_name(keyword)
+            logger.info(f"✅ Base model auto-derived from tokenized data name: {full_name}")
+            return full_name
+        logger.warning(
+            f"⚠️ Could not auto-derive base model from tokenized data '{tokenized_data}'"
+        )
+    # 6. Auto-derive from checkpoint (checks its config.json for base model consistency)
     if checkpoint:
         resolved_checkpoint = resolve_checkpoint_path(checkpoint, output_dir) if output_dir else checkpoint
         model_source = None
@@ -614,18 +627,12 @@ def resolve_base_model(
                 return full_name
         logger.warning(
             f"⚠️ Could not auto-derive base model from checkpoint '{checkpoint}' — "
-            "falling back to pipeline/env default"
+            "falling back to system default 'gemma3'"
         )
-    # 5. Pipeline-wide default model
-    pipeline_default = get_pipeline_value("pipeline.models.default_model", None)
-    if pipeline_default:
-        full_name = get_model_full_name(pipeline_default)
-        logger.info(f"✅ Base model resolved from pipeline.models.default_model: {full_name}")
-        return full_name
-    # 6. Env / hard-coded default (lowest priority)
+    # 7. Hard-coded system default 'gemma3' (lowest priority to guarantee a model is always found)
     default_model = get_default_model()
     full_name = get_model_full_name(default_model)
-    logger.info(f"✅ Base model resolved from env default: {full_name}")
+    logger.info(f"✅ Base model resolved from system default: {full_name}")
     return full_name
 
 

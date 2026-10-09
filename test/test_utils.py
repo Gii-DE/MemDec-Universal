@@ -2,7 +2,7 @@
 Test Suite for src/utils.py (including unit & integration tests + edge case testing)
 """
 
-import sys, json, logging, shutil, tempfile, unittest, torch
+import sys, os, json, logging, shutil, tempfile, unittest, torch
 from unittest.mock import patch, Mock, MagicMock
 from pathlib import Path
 
@@ -457,17 +457,45 @@ class TestExtractModelIdentifier(unittest.TestCase):
 
 
 class TestResolveBaseModel(unittest.TestCase):
-    """Test the unified base model resolution hierarchy"""
+    """Test the unified base model resolution hierarchy:
+    .env MEMDEC_MODEL > CLI > steps.<step>.base_model > models.default_model
+    > auto-derived (tokenized data / checkpoint) > system default 'gemma3'
+    """
 
-    def test_cli_overrides_everything(self):
-        """CLI --model must win over config, tokenized data, checkpoint and env"""
+    def test_env_overrides_everything(self):
+        """.env MEMDEC_MODEL is the global user setting and must win over CLI,
+        step config, pipeline default and auto-derived sources"""
 
-        result = resolve_base_model(cli_model="gemma3")
+        with patch.dict(os.environ, {"MEMDEC_MODEL": "smollm3"}), \
+             patch('src.utils.get_pipeline_value') as mock_get_pipeline:
+            result = resolve_base_model(
+                cli_model="gemma3-1b",
+                step_config_key="steps.step5_evaluation",
+                tokenized_data="legal_corpus_tokenized-gemma3",
+                checkpoint="step_500",
+                output_dir="/outputs",
+            )
+        self.assertEqual(result, "unsloth/SmolLM3-3B")
+        mock_get_pipeline.assert_not_called()
+
+    @patch('src.utils.get_pipeline_value')
+    def test_cli_overrides_config_when_env_unset(self, mock_get_pipeline):
+        """CLI --model wins over step config and pipeline default once .env is unset"""
+
+        env = {k: v for k, v in os.environ.items() if k != "MEMDEC_MODEL"}
+        with patch.dict(os.environ, env, clear=True):
+            result = resolve_base_model(
+                cli_model="gemma3",
+                step_config_key="steps.step5_evaluation",
+                tokenized_data="legal_corpus_tokenized-smollm3",
+            )
         self.assertEqual(result, "unsloth/gemma-3-270m-it")
+        mock_get_pipeline.assert_not_called()
 
     @patch('src.utils.get_pipeline_value')
     def test_step_config_overrides_pipeline_default(self, mock_get_pipeline):
-        """steps.<step>.base_model must win over pipeline.models.default_model"""
+        """steps.<step>.base_model must win over pipeline.models.default_model
+        and auto-derived sources once .env and CLI are unset"""
 
         def side_effect(key, default=None, usecase=None):
             if key == "steps.step5_evaluation.base_model":
@@ -476,17 +504,48 @@ class TestResolveBaseModel(unittest.TestCase):
                 return "smollm3"
             return default
         mock_get_pipeline.side_effect = side_effect
-        result = resolve_base_model(
-            step_config_key="steps.step5_evaluation",
-            tokenized_data="legal_corpus_tokenized-smollm3",
-        )
+        env = {k: v for k, v in os.environ.items() if k != "MEMDEC_MODEL"}
+        with patch.dict(os.environ, env, clear=True):
+            result = resolve_base_model(
+                step_config_key="steps.step5_evaluation",
+                tokenized_data="legal_corpus_tokenized-smollm3",
+            )
         self.assertEqual(result, "unsloth/gemma-3-1b-it")
+        # the pipeline default is never consulted once the step config resolves
+        mock_get_pipeline.assert_called_once_with("steps.step5_evaluation.base_model", None)
 
     @patch('src.utils._resolve_named_path')
     @patch('src.utils.get_dataset_tokenizer_model')
     @patch('src.utils.get_pipeline_value')
-    def test_tokenized_data_overrides_pipeline_default(self, mock_get_pipeline, mock_dataset_tokenizer, mock_resolve_tokenized):
-        """Tokenized data metadata must win over pipeline.models.default_model"""
+    def test_step_config_overrides_auto_derivation(self, mock_get_pipeline, mock_dataset_tokenizer, mock_resolve_tokenized):
+        """steps.<step>.base_model must win over auto-derived sources (and over
+        pipeline.models.default_model) once .env and CLI are unset"""
+
+        def side_effect(key, default=None, usecase=None):
+            if key == "steps.step5_evaluation.base_model":
+                return "gemma3-1b"
+            if key == "pipeline.models.default_model":
+                return "smollm3"
+            return default
+        mock_get_pipeline.side_effect = side_effect
+        env = {k: v for k, v in os.environ.items() if k != "MEMDEC_MODEL"}
+        with patch.dict(os.environ, env, clear=True):
+            result = resolve_base_model(
+                step_config_key="steps.step5_evaluation",
+                tokenized_data="legal_corpus_tokenized-smollm3",
+                checkpoint="smollm3-step_500",
+                output_dir="/outputs",
+            )
+        self.assertEqual(result, "unsloth/gemma-3-1b-it")
+        mock_resolve_tokenized.assert_not_called()
+        mock_dataset_tokenizer.assert_not_called()
+
+    @patch('src.utils._resolve_named_path')
+    @patch('src.utils.get_dataset_tokenizer_model')
+    @patch('src.utils.get_pipeline_value')
+    def test_pipeline_default_overrides_auto_derivation(self, mock_get_pipeline, mock_dataset_tokenizer, mock_resolve_tokenized):
+        """pipeline.models.default_model must win over auto-derived sources
+        once .env and CLI are unset (and no step config is set)"""
 
         def side_effect(key, default=None, usecase=None):
             if key == "steps.step5_evaluation.base_model":
@@ -495,70 +554,64 @@ class TestResolveBaseModel(unittest.TestCase):
                 return "gemma3"
             return default
         mock_get_pipeline.side_effect = side_effect
-        mock_resolve_tokenized.return_value = "/path/to/tokenized"
-        mock_dataset_tokenizer.return_value = "unsloth/SmolLM3-3B"
-        result = resolve_base_model(
-            step_config_key="steps.step5_evaluation",
-            tokenized_data="legal_corpus_tokenized-smollm3"
-        )
-        self.assertEqual(result, "unsloth/SmolLM3-3B")
+        env = {k: v for k, v in os.environ.items() if k != "MEMDEC_MODEL"}
+        with patch.dict(os.environ, env, clear=True):
+            result = resolve_base_model(
+                step_config_key="steps.step5_evaluation",
+                tokenized_data="legal_corpus_tokenized-smollm3",
+                checkpoint="smollm3-step_500",
+                output_dir="/outputs",
+            )
+        self.assertEqual(result, "unsloth/gemma-3-270m-it")
+        mock_resolve_tokenized.assert_not_called()
+        mock_dataset_tokenizer.assert_not_called()
 
     @patch('src.utils._resolve_named_path')
     @patch('src.utils.get_dataset_tokenizer_model')
     @patch('src.utils.get_pipeline_value')
-    def test_tokenized_data_overrides_checkpoint_and_env(self, mock_get_pipeline, mock_dataset_tokenizer, mock_resolve_tokenized):
-        """Tokenized data metadata must win over checkpoint and env when no higher source"""
+    def test_tokenized_data_overrides_checkpoint_and_fallback(self, mock_get_pipeline, mock_dataset_tokenizer, mock_resolve_tokenized):
+        """Tokenized data metadata must win over checkpoint and the system
+        default once .env, CLI and config are unset"""
 
         mock_get_pipeline.return_value = None
         mock_resolve_tokenized.return_value = "/path/to/tokenized"
         mock_dataset_tokenizer.return_value = "unsloth/gemma-3-1b-it"
-        result = resolve_base_model(
-            tokenized_data="legal_corpus_tokenized-gemma3",
-            checkpoint="some-checkpoint",
-            output_dir="/outputs"
-        )
+        env = {k: v for k, v in os.environ.items() if k != "MEMDEC_MODEL"}
+        with patch.dict(os.environ, env, clear=True):
+            result = resolve_base_model(
+                tokenized_data="legal_corpus_tokenized-gemma3",
+                checkpoint="some-checkpoint",
+                output_dir="/outputs"
+            )
         self.assertEqual(result, "unsloth/gemma-3-1b-it")
 
     @patch('src.utils.resolve_checkpoint_path')
     @patch('src.utils.get_pipeline_value')
     @patch('src.utils.get_default_model')
-    def test_checkpoint_overrides_pipeline_default_and_env(self, mock_get_default, mock_get_pipeline, mock_resolve_checkpoint):
-        """Checkpoint must win over pipeline.models.default_model and env"""
+    def test_checkpoint_overrides_fallback(self, mock_get_default, mock_get_pipeline, mock_resolve_checkpoint):
+        """Checkpoint derivation must win over the system default once .env,
+        CLI, config and tokenized data are unset"""
 
-        def side_effect(key, default=None, usecase=None):
-            if key == "pipeline.models.default_model":
-                return "smollm3"
-            return default
-        mock_get_pipeline.side_effect = side_effect
+        mock_get_pipeline.return_value = None
         mock_resolve_checkpoint.return_value = "/outputs/gemma3-step_5000"
         mock_get_default.return_value = "smollm3"
-        result = resolve_base_model(checkpoint="gemma3-step_5000", output_dir="/outputs")
+        env = {k: v for k, v in os.environ.items() if k != "MEMDEC_MODEL"}
+        with patch.dict(os.environ, env, clear=True):
+            result = resolve_base_model(checkpoint="gemma3-step_5000", output_dir="/outputs")
         self.assertEqual(result, "unsloth/gemma-3-270m-it")
         mock_get_default.assert_not_called()
 
     @patch('src.utils.get_pipeline_value')
     @patch('src.utils.get_default_model')
-    def test_pipeline_default_overrides_env(self, mock_get_default, mock_get_pipeline):
-        """pipeline.models.default_model wins over env when no higher source"""
-
-        def side_effect(key, default=None, usecase=None):
-            if key == "pipeline.models.default_model":
-                return "gemma3"
-            return default
-        mock_get_pipeline.side_effect = side_effect
-        mock_get_default.return_value = "smollm3"
-        result = resolve_base_model()
-        self.assertEqual(result, "unsloth/gemma-3-270m-it")
-        mock_get_default.assert_not_called()
-
-    @patch('src.utils.get_pipeline_value')
-    @patch('src.utils.get_default_model')
-    def test_env_fallback_when_nothing_set(self, mock_get_default, mock_get_pipeline):
-        """Env default is used when CLI, config, tokenized data and checkpoint are absent"""
+    def test_builtin_fallback_when_nothing_set(self, mock_get_default, mock_get_pipeline):
+        """System default (get_default_model) is used when .env, CLI, config,
+        tokenized data and checkpoint are all absent"""
 
         mock_get_pipeline.return_value = None
         mock_get_default.return_value = "gemma3"
-        result = resolve_base_model()
+        env = {k: v for k, v in os.environ.items() if k != "MEMDEC_MODEL"}
+        with patch.dict(os.environ, env, clear=True):
+            result = resolve_base_model()
         self.assertEqual(result, "unsloth/gemma-3-270m-it")
         mock_get_default.assert_called_once()
 

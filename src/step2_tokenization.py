@@ -359,7 +359,14 @@ def parse_arguments() -> argparse.Namespace:
         argparse.Namespace: Parsed command line arguments
     """
     parser = argparse.ArgumentParser(description="Tokenize cleaned dataset for training")
-    config_base_model = resolve_base_model(step_config_key="steps.step2_tokenization")
+    base_parser = argparse.ArgumentParser(add_help=False)
+    base_parser.add_argument('--model', type=str, default=None)
+    cli_model = base_parser.parse_known_args()[0].model
+    # Determine base_model: .env > CLI > step config > pipeline default > system default
+    config_base_model = resolve_base_model(
+        cli_model=cli_model,
+        step_config_key="steps.step2_tokenization",
+    )
     config_dataset_cleaned = get_pipeline_value("steps.step2_tokenization.dataset_cleaned", CORPUS_NAME)
     config_train_test_split = get_pipeline_value("steps.step2_tokenization.train_test_split", 0.8)
     config_num_workers = get_pipeline_value("steps.step2_tokenization.num_workers", 2)
@@ -372,6 +379,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--num-workers", type=int, default=config_num_workers, 
                         help=f"Number of worker processes [default: {config_num_workers}]")
     args = parser.parse_args()
+    args.model = config_base_model
     if args.dataset_cleaned is None:
         parser.error("dataset_cleaned is required: pass it or set steps.step2_tokenization.dataset_cleaned / pipeline.corpus_name in pipeline_config.yaml")
     return args

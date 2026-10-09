@@ -4,7 +4,7 @@ pipeline:
   corpus_name: "custom_corpus"                        # Combined corpus output name
   sources_path: "config/custom_usecase/sources.json"  # Test source/reference file
   models:
-    default_model: "gemma3"                           # LLM model (determines tokenized data path)
+    #default_model: "gemma3"                          # Usecase's LLM base model (determines tokenized data path)
 
 # Step-specific configs
 steps:
@@ -17,8 +17,8 @@ steps:
       - "dataset-name"
   
   step0_dataset:
-    #default_dataset: "dataset_small"                  # for remote downloads (URL-based Dataset)
-    #local_file: "dataset1"                            # for local files (in data/ folder)
+    #default_dataset: "dataset_small"                 # for remote downloads (URL-based Dataset)
+    #local_file: "dataset1"                           # for local files (in data/ folder)
   
   step1_cleaning:
     # --- Dataset selection ---
@@ -32,13 +32,13 @@ steps:
   
   step2_tokenization:
     dataset_cleaned: "custom_corpus"
-    # "base_model" is auto-derived from default_model
+    #base_model: <smollm3/qwen3.5>      # "base_model" is auto-derived from default_model
     train_test_split: 0.1
     num_workers: 2
   
   step3_pretraining:
     tokenized_data: "custom_corpus_tokenized-gemma3"
-    # "base_model" is auto-derived from tokenized_data
+    #base_model: <smollm3/qwen3.5>      # "base_model" is auto-derived from tokenized_data
     #batch_size: 8
     #seed: 42
     #ncentroids: 2048
@@ -47,7 +47,7 @@ steps:
   step4_training:
     #no_unsloth: false
     tokenized_data: "custom_corpus_tokenized-gemma3"
-    # "base_model" is auto-derived from tokenized_data
+    #base_model: <smollm3/qwen3.5>      # "base_model" is auto-derived from tokenized_data
     #checkpoint: "step_1000"
     # --- MemDec params ---
     #k_neighbors: 4
@@ -56,16 +56,15 @@ steps:
     # --- Training params ---
     #max_steps: 1000
     #checkpointing_steps: 50
-    #num_train_epochs: 2              # capped by max_steps (auto-raised if too few)
-    #per_device_train_batch_size: 2   # 1 on CPU, 2 on GPU
+    #num_train_epochs: 2                  # capped by max_steps (auto-raised if too few)
+    #per_device_train_batch_size: 2       # 1 on CPU, 2 on GPU
     #gradient_accumulation_steps: 8
     #learning_rate: 1.5e-4
     #seed: 42
   
   step5_testing:                # Optional - for testing the trained model
     #checkpoint: "step_1000"
-    # "base_model" is auto-derived from checkpoint
-    #base_model: "unsloth/gemma-3-1b-it"  # test with different base model of same family
+    #base_model: <smollm3/qwen3.5 or gemma3-1b>  # "base_model" is auto-derived from checkpoint
     # --- MemDec params ---
     #lmbda: 0.3
     #knn_temp: 1.0
@@ -73,7 +72,7 @@ steps:
     #max_new_tokens: 300
     #repetition_penalty: 1.25
     # --- Sampling (optional) ---
-    #do_sample: true          # default: do_sample=False
+    #do_sample: true                      # default: do_sample=False
     #temperature: 1.0
     #top_p: 1.0
     #top_k: 0
@@ -93,9 +92,7 @@ steps:
   step5_evaluation:             # Optional - for evaluating the trained model
     #checkpoint: "step_1000"
     tokenized_data: "custom_corpus_tokenized-gemma3"
-    # "base_model" is auto-derived from tokenized_data/checkpoint
-    #base_model: "unsloth/gemma-3-1b-it"  # test with different base model of same family
-    # --- MemDec params ---
+    #base_model: <smollm3/qwen3.5 or gemma3-1b>  # "base_model" is auto-derived from tokenized_data/checkpoint
     #lmbda: 0.3
     #knn_temp: 1.0
     # --- Eval params ---

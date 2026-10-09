@@ -705,7 +705,7 @@ def parse_arguments() -> argparse.Namespace:
     base_parser.add_argument("--checkpoint", type=str, default=None)
     early_args = base_parser.parse_known_args()[0]
     config_checkpoint = get_pipeline_value("steps.step5_testing.checkpoint", default_config.checkpoint_dir)
-    # Determine base_model: CLI > step config > checkpoint (CLI or pipeline config) > pipeline default > env
+    # Determine base_model: .env > CLI > step config > pipeline default > checkpoint > system default
     config_base_model = resolve_base_model(
         cli_model=early_args.model,
         step_config_key="steps.step5_testing",
@@ -766,6 +766,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=default_config.batch_size,
                         help=f"[FIXED] Batch size [default: {default_config.batch_size}]")
     args = parser.parse_args()
+    args.model = config_base_model
     if args.knowledge_base_path != default_config.knowledge_base_path:
         parser.error(f"--knowledge-base-path is fixed to '{default_config.knowledge_base_path}' and cannot be changed via CLI.")
     if args.output_dir != default_config.output_dir:

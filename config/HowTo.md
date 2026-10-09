@@ -75,9 +75,9 @@ The file is split into 2 sections:
 > - **Unset parameters** fall back to their built-in defaults, e.g. the commented-out [`#min_text_length:`](/config/custom_usecase/pipeline_config.yaml) resolves to *60*.
 > - Each step auto-selects `base_model` by evaluating the sources below in order of priority as a **hierarchy system**, using the first value found:
 >
-> <kbd>CLI `--model` → `steps.<step>.base_model` → auto-derived from `tokenized_data` & `checkpoint` → `models.default_model` → .env `MEMDEC_MODEL` → system default `gemma3`</kbd>
+> <kbd>.env `MEMDEC_MODEL` → CLI `--model` → `steps.<step>.base_model` → `models.default_model` → auto-derived from `tokenized_data` & `checkpoint` → system default `gemma3`</kbd>
 >
-> The CLI `--model` argument takes precedence, followed by `base_model` set under **steps**, then the model auto-derived from the loaded `tokenized_data` or `checkpoint`, `models.default_model`, the `.env` variable `MEMDEC_MODEL`, and `gemma3` as the built-in fallback
+> The **.env** variable `MEMDEC_MODEL` is the global user setting and takes precedence over everything else, followed by the **CLI** `--model` argument, `steps.<step>.base_model`, `models.default_model`, the model auto-derived from the loaded `tokenized_data` or `checkpoint`, and `gemma3` as the built-in fallback. Remove or comment out `MEMDEC_MODEL` in `.env` to let `--model` and the config file take over.
 > - Parameters marked **[FIXED]** in the CLI cannot be changed, such as `knowledge_base_path`, `output_dir`, and `results_dir`; changing those paths requires editing the source code directly!
 
 > [!TIP]

@@ -318,7 +318,7 @@ def parse_arguments() -> argparse.Namespace:
     default_config = TrainingConfig()
     if args.tokenized_data is None:
         args.tokenized_data = get_pipeline_value("steps.step4_training.tokenized_data", default_config.tokenized_data_path)
-    # Determine base_model: CLI > step config > tokenized data > pipeline default > env
+    # Determine base_model: .env > CLI > step config > pipeline default > tokenized data > system default
     base_parser_model = argparse.ArgumentParser(add_help=False)
     base_parser_model.add_argument('--model', type=str, default=None)
     cli_model = base_parser_model.parse_known_args()[0].model
@@ -389,6 +389,7 @@ def parse_arguments() -> argparse.Namespace:
     train_group.add_argument('--lr-scheduler-type', type=str, default=default_config.lr_scheduler_type,
                          help=f'[FIXED] Learning rate scheduler type [default: {default_config.lr_scheduler_type}]')
     args = parser.parse_args()
+    args.model = config_base_model
     if not args.tokenized_data:
         parser.error("tokenized_data is required: pass it or set steps.step4_training.tokenized_data / pipeline.corpus_name in pipeline_config.yaml")
     if args.knn_datastore_path != default_config.knn_datastore_path:

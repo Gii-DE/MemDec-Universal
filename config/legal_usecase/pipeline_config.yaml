@@ -4,7 +4,7 @@ pipeline:
   corpus_name: "legal_corpus"
   sources_path: "config/legal_usecase/sources.json"
   models:
-    default_model: "gemma3"
+    #default_model: "gemma3"            # Usecase's LLM base model (determines tokenized data path)
 
 # Step-specific configs
 steps:
@@ -15,8 +15,8 @@ steps:
       - "bverfg_decisions"
   
   step0_dataset:
-    default_dataset: "bverfg_decisions"         # for remote downloads (URL-based Dataset)
-    #local_file: "gerdalir_queries"             # for local files (in data/ folder)
+    default_dataset: "bverfg_decisions"   # for remote downloads (URL-based Dataset)
+    #local_file: "gerdalir_queries"       # for local files (in data/ folder)
   
   step1_cleaning:
     # --- Dataset selection ---
@@ -30,13 +30,13 @@ steps:
     
   step2_tokenization:
     dataset_cleaned: "cases2026_10k"
-    # "base_model" is auto-derived from default_model
+    #base_model: "smollm3"      # "base_model" is auto-derived from default_model
     #train_test_split: 0.8
     num_workers: 4
   
   step3_pretraining:
     tokenized_data: "cases2026_10k_tokenized-gemma3"
-    # "base_model" is auto-derived from tokenized_data
+    #base_model: "smollm3"      # "base_model" is auto-derived from tokenized_data
     batch_size: 32    # use 8 on CPU/low-VRAM
     #seed: 42
     #ncentroids: 2048
@@ -45,7 +45,7 @@ steps:
   step4_training:
     #no_unsloth: false
     tokenized_data: "cases2026_10k_tokenized-gemma3"
-    # "base_model" is auto-derived from tokenized_data
+    #base_model: "smollm3"      # "base_model" is auto-derived from tokenized_data
     #checkpoint: "step_100"
     # --- MemDec params ---
     #k_neighbors: 4
@@ -61,9 +61,8 @@ steps:
     #seed: 42
   
   step5_testing:
-    checkpoint: "step_1000"
-    # "base_model" is auto-derived from checkpoint
-    #base_model: "gemma3-1b"  # test with different base model of same family
+    checkpoint: "gemma-step_500"
+    #base_model: "gemma3-1b"  # "base_model" is auto-derived from checkpoint
     # --- MemDec params ---
     lmbda: 0.2
     #knn_temp: 1.0
@@ -92,10 +91,9 @@ steps:
     #compare_base: true
   
   step5_evaluation:
-    checkpoint: "step_1000"
-    tokenized_data: "cases2026_10k_tokenized-gemma3"
-    # "base_model" is auto-derived from checkpoint
-    #base_model: "gemma3-1b"  # test with different base model of same family
+    checkpoint: "gemma-step_500"
+    tokenized_data: "legal_corpus_tokenized-gemma3"
+    #base_model: "gemma3-1b"  # "base_model" is auto-derived from tokenized_data/checkpoint
     # --- MemDec params ---
     lmbda: 0.2
     #knn_temp: 1.0

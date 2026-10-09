@@ -174,7 +174,7 @@ MemDec offers a parametric alternative to *Retrieval-Augmented Generation* (RAG)
 > </details>
 
 > [!IMPORTANT]
-> All CLI flags listed above are optional overrides: arguments not passed on the command line resolve to their configured values in [<kbd>pipeline_config.yaml</kbd>](config/legal_usecase/pipeline_config.yaml) and [<kbd>dataset_config.yaml</kbd>](config/legal_usecase/dataset_config.yaml), so each step can equally be invoked as `python -m src.<step>` without flags. The complete YAML schemas, parameter descriptions and instructions for defining custom domains are documented in [<kbd>config/`HowTo.md`</kbd>](config/HowTo.md).
+> All CLI flags listed above are optional overrides: arguments not passed on the command line resolve to their configured values in [<kbd>pipeline_config.yaml</kbd>](config/legal_usecase/pipeline_config.yaml) and [<kbd>dataset_config.yaml</kbd>](config/legal_usecase/dataset_config.yaml), so each step can equally be invoked as `python -m src.<step>` without flags. **Exception:** for `base_model`, the global `.env` setting `MEMDEC_MODEL` outranks even the `--model` flag (remove it from `.env` to let `--model` take over). The complete YAML schemas, parameter descriptions and instructions for defining custom domains are documented in [<kbd>config/`HowTo.md`</kbd>](config/HowTo.md).
 
 ---
 <a id="project-structure"></a>
