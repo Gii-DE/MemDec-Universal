@@ -211,15 +211,17 @@ def main(datasets: List[str], output_dir: str = None, corpus_name: str = None) -
             for base in [PROJECT_ROOT, DATA_DIR]:
                 path = base / ds
                 if path.exists():
-                    rel_path = str(Path(path).relative_to(PROJECT_ROOT)).replace('\\', '/')
+                    try:
+                        rel_path = str(path.resolve().relative_to(PROJECT_ROOT)).replace('\\', '/')
+                    except ValueError:
+                        rel_path = str(path.resolve())
                     full_dataset_paths.append(rel_path)
                     break
             else:
                 path = Path(ds)
                 if path.exists():
-                    rel_path = str(Path(path).relative_to(PROJECT_ROOT)).replace('\\', '/')
                     try:
-                        rel_path = str(path.relative_to(PROJECT_ROOT)).replace('\\', '/')
+                        rel_path = str(path.resolve().relative_to(PROJECT_ROOT)).replace('\\', '/')
                     except ValueError:
                         rel_path = str(path)
                     full_dataset_paths.append(rel_path)

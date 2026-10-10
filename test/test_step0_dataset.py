@@ -118,14 +118,13 @@ class TestDownloadWithProgress(unittest.TestCase):
     @patch('src.step0_dataset.logger')
     @patch('src.step0_dataset.tqdm')
     @patch('src.step0_dataset.requests.get')
-    @patch('src.step0_dataset.os.path.getsize')
-    def test_download_resume(self, mock_getsize, mock_get, mock_tqdm, mock_logger):
-        """Test download resume when partial file exists"""
+    def test_download_resume(self, mock_get, mock_tqdm, mock_logger):
+        """Test download resume when partial file exists (server honors Range → 206)"""
 
         part_path = self.target_path.with_suffix('.part')
         part_path.write_bytes(b'partial')
-        mock_getsize.return_value = 7
         mock_response = Mock()
+        mock_response.status_code = 206
         mock_response.headers = {'content-length': '5'}
         mock_response.iter_content = Mock(return_value=[b'data!'])
         mock_response.raise_for_status = Mock()
@@ -136,17 +135,36 @@ class TestDownloadWithProgress(unittest.TestCase):
         self.assertIn('Range', call_kwargs.kwargs.get('headers', {}))
         self.assertEqual(call_kwargs.kwargs['headers']['Range'], 'bytes=7-')
         mock_logger.warning.assert_not_called()
+        self.assertEqual(self.target_path.read_bytes(), b'partialdata!')
+
+    @patch('src.step0_dataset.logger')
+    @patch('src.step0_dataset.tqdm')
+    @patch('src.step0_dataset.requests.get')
+    def test_download_resume_restart_when_range_ignored(self, mock_get, mock_tqdm, mock_logger):
+        """Server returns 200 despite a Range request → restart, never append onto .part"""
+
+        part_path = self.target_path.with_suffix('.part')
+        part_path.write_bytes(b'partial')
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {'content-length': '11'}
+        mock_response.iter_content = Mock(return_value=[b'hello ', b'world'])
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+        mock_tqdm.return_value = Mock()
+        _download_with_progress("https://example.com/file.gz", self.target_path)
+        mock_logger.warning.assert_called_once()
+        self.assertEqual(self.target_path.read_bytes(), b'hello world')
 
     @patch('src.step0_dataset.logger')
     @patch('src.step0_dataset.requests.get')
-    @patch('src.step0_dataset.os.path.getsize')
-    def test_download_already_complete(self, mock_getsize, mock_get, mock_logger):
-        """Test early exit when file is already fully downloaded"""
+    def test_download_already_complete(self, mock_get, mock_logger):
+        """Test early exit when server reports 416 — .part already holds the complete file"""
 
         part_path = self.target_path.with_suffix('.part')
         part_path.write_bytes(b'complete data')
-        mock_getsize.return_value = 13
         mock_response = Mock()
+        mock_response.status_code = 416
         mock_response.headers = {'content-length': '0'}
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
@@ -155,6 +173,8 @@ class TestDownloadWithProgress(unittest.TestCase):
         warning_messages = [str(c) for c in mock_logger.warning.call_args_list]
         self.assertTrue(any("already" in msg.lower() for msg in warning_messages),
                         "Logger should warn that file is already downloaded")
+        self.assertEqual(self.target_path.read_bytes(), b'complete data')
+        self.assertFalse(part_path.exists())
 
     @patch('src.step0_dataset.requests.get')
     def test_download_http_error_raises(self, mock_get):

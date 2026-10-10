@@ -84,8 +84,14 @@ def load_cleaned_dataset(cleaned_path: str) -> Dataset:
         logger.error("💡 Run: python -m src.step1_cleaning --hf-dataset <dataset_name> --hf-config <config_name>")
         raise
 
-    if "text" not in dataset.column_names:
+    if 'text' not in dataset.column_names:
         logger.error(f"❌ Missing 'text' column. Found: {dataset.column_names}")
+        if 'input_ids' in dataset.column_names:
+            raise ValueError(
+                "Dataset is already tokenized (has 'input_ids'). "
+                "Pass the CLEANED dataset from step1 (e.g. 'legal_corpus'), "
+                "not the tokenized one ('*_tokenized-*')."
+            )
         raise ValueError("Dataset must have 'text' column from step1")
     logger.info(f"   Columns: {dataset.column_names}")
     return dataset
@@ -96,6 +102,7 @@ def tokenize_dataset(
     tokenizer: PreTrainedTokenizer,
     num_workers: Optional[int] = None,
     batch_size: int = 3000,
+    max_length: int = 512,
     output_path: Optional[Path] = None
 ) -> Dataset:
     """
@@ -106,16 +113,17 @@ def tokenize_dataset(
         tokenizer: Tokenizer to use
         num_workers: Number of workers for tokenization
         batch_size: Batch size for tokenization
+        max_length: Maximum sequence length for truncation
         output_path: Optional path to save Arrow dataset
         
     Returns:
         Tokenized dataset
     """
     num_workers = num_workers or 2
-    logger.info(f"🔄 Tokenizing (batch_size={batch_size}, workers={num_workers})...")
+    logger.info(f"🔄 Tokenizing (batch_size={batch_size}, workers={num_workers}, max_length={max_length})...")
     start_time = time.time()
     tokenized_dataset = dataset.map(
-        lambda x: tokenize_batch(x, tokenizer),
+        lambda x: tokenize_batch(x, tokenizer, max_length=max_length),
         batched=True,
         batch_size=batch_size,
         num_proc=num_workers,
@@ -173,7 +181,7 @@ def save_train_test_json(
             logger.warning(f"Could not read state.json: {e}")
     
     tokenizer_model = tokenizer.name_or_path
-    tokenizer_family = extract_model_identifier(tokenizer_model)
+    tokenizer_family = extract_model_identifier(tokenizer_model, return_default=False) or tokenizer_model
     compatible_models = []
     try:
         config_file = PROJECT_ROOT / "config" / "model_config.json"
@@ -181,8 +189,11 @@ def save_train_test_json(
             with open(config_file, "r", encoding="utf-8") as f:
                 config_data = json.load(f) 
             models_dict = config_data.get("models", {})
+            fam = tokenizer_family.lower().replace('-', '').replace('_', '').replace('.', '')
             for key, model_info in models_dict.items():
-                if tokenizer_family in key or tokenizer_family in model_info.get("name", ""):
+                clean_key  = key.lower().replace('-', '').replace('_', '').replace('.', '')
+                clean_name = model_info.get("name", "").lower().replace('-', '').replace('_', '').replace('.', '')
+                if (fam and (fam in clean_key or clean_key in fam)) or (fam and fam in clean_name):
                     compatible_models.append(model_info.get("name"))
     except Exception as e:
         logger.warning(f"Could not resolve compatible models from config: {e}")
@@ -281,9 +292,12 @@ def main(
     logger.info("="*60)
     logger.info("🧾 STEP 2: Dataset Tokenization")
     logger.info("="*60)
+    logger.info(f"Base model: {base_model}")
     if tokenized_path.exists():
         logger.info(f"🔄 Found existing tokenized dataset: {tokenized_path}")
         try:
+            if not (tokenized_path / "arrow_data").exists():
+                raise FileNotFoundError("arrow_data directory missing")
             metadata_file = tokenized_path / "dataset_metadata.json"
             if not metadata_file.exists():
                 metadata_file = tokenized_path / "state.json"
@@ -297,7 +311,7 @@ def main(
             logger.info(f" Run: python -m src.step3_pretraining {dataset_cleaned}_tokenized-{model_keyword}")
             logger.info("="*60)
             return
-        except:
+        except Exception:
             logger.warning("⚠️ Existing tokenized dataset corrupted, reprocessing...")
     logger.info(f"🔤 Tokenizer: {base_model}")
     try:

@@ -455,6 +455,15 @@ class TestExtractModelIdentifier(unittest.TestCase):
         self.assertEqual(get_model_full_name("gemma-3-1b-it"), "unsloth/gemma-3-1b-it")
         self.assertEqual(get_model_full_name("gemma3"), "unsloth/gemma-3-270m-it")
 
+    def test_get_model_full_name_unknown_warns_and_falls_back(self):
+        """Unmatched input (e.g. typo 'mollm2-1.7b') warns and falls back to the default model"""
+
+        with patch('src.utils.logger') as mock_logger:
+            result = get_model_full_name("mollm2-1.7b")
+        self.assertEqual(result, get_model_config(get_default_model())["name"])
+        mock_logger.warning.assert_called_once()
+        self.assertIn("mollm2-1.7b", mock_logger.warning.call_args.args[0])
+
 
 class TestResolveBaseModel(unittest.TestCase):
     """Test the unified base model resolution hierarchy:

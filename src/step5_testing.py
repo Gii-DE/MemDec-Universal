@@ -93,13 +93,12 @@ def load_test_config() -> Dict[str, Any]:
     return converted
 
 
-def _load_lm(path: str, config: TestingConfig, torch_dtype, device_map, model_config=None):
+def _load_lm(path: str, torch_dtype, device_map, model_config=None):
     """
     Load a causal LM via plain transformers.
 
     Args:
         path: HF model id or local checkpoint directory (full weights, not LoRA)
-        config: TestingConfig (currently unused; kept for signature symmetry)
         torch_dtype: dtype for weights
         device_map: device_map for the model
         model_config: optional AutoConfig for the model
@@ -141,12 +140,12 @@ def load_models(config: TestingConfig) -> tuple:
         tokenizer = initialize_tokenizer(config.base_model)
         base_model_config = AutoConfig.from_pretrained(config.base_model)
         cleanup_qwen_config(base_model_config, config.base_model)
-        base_lm = _load_lm(config.base_model, config, torch_dtype, device_map, model_config=base_model_config)
+        base_lm = _load_lm(config.base_model, torch_dtype, device_map, model_config=base_model_config)
         knn_generator_path = config.checkpoint_dir if config.checkpoint_dir else config.base_model
         if config.checkpoint_dir:
             validate_checkpoint_model_type(knn_generator_path, config.base_model, base_model_config)
         try:
-            knn_generator = _load_lm(knn_generator_path, config, torch_dtype, device_map)
+            knn_generator = _load_lm(knn_generator_path, torch_dtype, device_map)
             if config.checkpoint_dir:
                 logger.info(f"✅ KNN generator loaded from checkpoint: {knn_generator_path}")
             else:
@@ -589,9 +588,15 @@ def save_results(all_results: List[Dict], config: TestingConfig, summary: Option
     config_dict = config.__dict__.copy()
     for key, value in config_dict.items():
         if isinstance(value, Path):
-            config_dict[key] = str(value.relative_to(PROJECT_ROOT)).replace("\\", "/")
+            try:
+                config_dict[key] = str(value.relative_to(PROJECT_ROOT)).replace("\\", "/")
+            except ValueError:
+                config_dict[key] = str(value)
         elif isinstance(value, str) and str(PROJECT_ROOT) in value:
-            config_dict[key] = str(Path(value).relative_to(PROJECT_ROOT)).replace("\\", "/")
+            try:
+                config_dict[key] = str(Path(value).relative_to(PROJECT_ROOT)).replace("\\", "/")
+            except ValueError:
+                config_dict[key] = value
     model_keyword = extract_model_identifier(config.base_model) or "model"
     out_path = Path(config.results_dir) / f"test_results_{model_keyword}_{timestamp}.json"
     with open(out_path, "w", encoding="utf-8") as f:
@@ -619,6 +624,7 @@ def main(config: TestingConfig) -> None:
     logger.info("=" * 60)
     logger.info("🧪 STEP 5: Qualitative Source-Fidelity Testing")
     logger.info("=" * 60)
+    logger.info(f"Base model: {config.base_model}")
     for k, v in config.__dict__.items():
         logger.info(f"  {k}: {v}")
     try:
@@ -729,7 +735,7 @@ def parse_arguments() -> argparse.Namespace:
     action_sample = "store_false" if config_do_sample else "store_true"
     # Variable defaults via pipeline_config
     parser.add_argument("--model", type=str, default=config_base_model,
-                        help=f"Base model preset (gemma3/qwen3.5/smollm3) [default: auto-derived from checkpoint or default]")
+                        help=f"Base model preset (gemma3/qwen3.5/smollm3) [default: {config_base_model}]")
     parser.add_argument("--checkpoint", type=str, default=config_checkpoint,
                         help="Trained checkpoint to load as knn_generator. Accepts: <step_5000>, <outputs/step_5000>, absolute path, or <latest> (default).")
     parser.add_argument("--max-new-tokens", type=int, default=config_max_new_tokens,

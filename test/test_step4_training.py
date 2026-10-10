@@ -12,6 +12,7 @@ from src.step4_training import (
     setup_environment, 
     prepare_dataset, 
     setup_training_args,
+    _resolve_canonical_kb_paths,
     validate_dataset,
     main
 )
@@ -198,6 +199,75 @@ class TestSetupTrainingArgs(unittest.TestCase):
         mock_kb_paths.return_value = {'dstore': '/test/dstore', 'index': '/test/index'}
         args = setup_training_args(TrainingConfig(num_train_epochs=25), "/test/train.json")
         self.assertIn("--num_train_epochs=25", args)
+
+
+class TestResolveCanonicalKbPaths(unittest.TestCase):
+    """Test canonical datastore/index fallback when model_config has no dstore/index entries"""
+
+    def setUp(self):
+        """Setup test data"""
+
+        self.temp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """Cleanup test data"""
+
+        shutil.rmtree(self.temp_dir)
+
+    def test_canonical_keyword_match(self):
+        """Picks dstore_{keyword}_*/index_{keyword}_* written by step3"""
+
+        dstore = os.path.join(self.temp_dir, "dstore_gemma3_576.arrow")
+        index = os.path.join(self.temp_dir, "index_gemma3_576.index")
+        open(dstore, 'wb').close()
+        open(index, 'wb').close()
+        config = TrainingConfig(
+            base_model="unsloth/gemma-3-270m-it",
+            knn_datastore_path=self.temp_dir
+        )
+        result = _resolve_canonical_kb_paths(config)
+        self.assertEqual(result["dstore"], dstore)
+        self.assertEqual(result["index"], index)
+
+    def test_legacy_single_file_fallback(self):
+        """A single non-keyword-named file (pre-rename dstore_llama_*) is accepted"""
+
+        dstore = os.path.join(self.temp_dir, "dstore_llama_960.arrow")
+        open(dstore, 'wb').close()
+        config = TrainingConfig(
+            base_model="unsloth/SmolLM2-360M-Instruct",
+            knn_datastore_path=self.temp_dir
+        )
+        result = _resolve_canonical_kb_paths(config)
+        self.assertEqual(result["dstore"], dstore)
+        self.assertEqual(result["index"], "")
+
+    def test_no_dstore_raises(self):
+        """Empty datastore dir raises ValueError pointing at step3"""
+
+        config = TrainingConfig(
+            base_model="unsloth/gemma-3-270m-it",
+            knn_datastore_path=self.temp_dir
+        )
+        with self.assertRaises(ValueError) as context:
+            _resolve_canonical_kb_paths(config)
+        self.assertIn("step3", str(context.exception))
+
+    @patch('src.step4_training.get_knowledge_base_paths')
+    @patch('src.step4_training.logger', create=True)
+    def test_setup_training_args_fallback_on_null_config(self, mock_logger, mock_kb_paths):
+        """setup_training_args falls back to canonical files when config has null dstore/index"""
+
+        mock_kb_paths.side_effect = ValueError("Knowledge base paths not defined for model: gemma3")
+        dstore = os.path.join(self.temp_dir, "dstore_gemma3_576.arrow")
+        open(dstore, 'wb').close()
+        config = TrainingConfig(
+            base_model="unsloth/gemma-3-270m-it",
+            knn_datastore_path=self.temp_dir,
+            output_dir=os.path.join(self.temp_dir, "outputs")
+        )
+        args = setup_training_args(config, "/test/train.json")
+        self.assertIn(f"--knn_save_path={dstore}", args)
 
 
 class TestValidateDataset(unittest.TestCase):

@@ -195,6 +195,7 @@ class TestCreateKNNDatastore(unittest.TestCase):
         mock_config.from_pretrained.return_value = mock_config_instance
         mock_model_instance = MagicMock()
         mock_model_instance.config.hidden_size = 768
+        mock_model_instance.config.model_type = "testarch"
         mock_model_instance.config.max_position_embeddings = 2048
         mock_model_instance.config.sliding_window = 512
         mock_model_instance.device = "cpu"
@@ -238,6 +239,7 @@ class TestCreateKNNDatastore(unittest.TestCase):
         mock_config.from_pretrained.return_value = mock_config_instance
         mock_model_instance = MagicMock()
         mock_model_instance.config.hidden_size = 768
+        mock_model_instance.config.model_type = "testarch"
         mock_model_instance.config.max_position_embeddings = 2048
         mock_model_instance.config.sliding_window = 512
         mock_model_instance.device = "cpu"
@@ -256,6 +258,7 @@ class TestCreateKNNDatastore(unittest.TestCase):
         self.assertEqual(mock_knn_saver.call_args.kwargs["dimension"], 768)
         self.assertEqual(mock_knn_saver.call_args.kwargs["dstore_dir"], self.config.knn_datastore_path)
         self.assertFalse(mock_knn_saver.call_args.kwargs["knn_gpu"])
+        self.assertEqual(mock_knn_saver.call_args.kwargs["model_name"], "test/model")
         mock_logger.info.assert_called()
     
     @patch('src.step3_pretraining.get_index_path')
@@ -283,6 +286,7 @@ class TestCreateKNNDatastore(unittest.TestCase):
         mock_config.from_pretrained.return_value = mock_config_instance
         mock_model_instance = MagicMock()
         mock_model_instance.config.hidden_size = 768
+        mock_model_instance.config.model_type = "testarch"
         mock_model_instance.config.max_position_embeddings = 2048
         mock_model_instance.config.sliding_window = 512
         mock_model_instance.device = "cpu"
@@ -329,6 +333,7 @@ class TestCreateKNNDatastore(unittest.TestCase):
         mock_config.from_pretrained.return_value = mock_config_instance
         mock_model_instance = MagicMock()
         mock_model_instance.config.hidden_size = 768
+        mock_model_instance.config.model_type = "testarch"
         mock_model_instance.device = "cpu"
         mock_model_instance.to.return_value = mock_model_instance
         mock_model.from_pretrained.return_value = mock_model_instance
@@ -341,6 +346,50 @@ class TestCreateKNNDatastore(unittest.TestCase):
                 create_knn_datastore(self.config)
         mock_saver_instance.break_into.assert_not_called()
         mock_load.assert_not_called()
+
+    @patch('src.step3_pretraining.get_index_path')
+    @patch('src.step3_pretraining.logger')
+    @patch('src.step3_pretraining.load_from_disk')
+    @patch('src.step3_pretraining.setup_device')
+    @patch('src.step3_pretraining.Accelerator')
+    @patch('src.step3_pretraining.AutoConfig')
+    @patch('src.step3_pretraining.AutoModelForCausalLM')
+    @patch('src.step3_pretraining.KNNSaverMulti')
+    def test_create_knn_datastore_migrates_legacy_names(self, mock_knn_saver, mock_model, mock_config, mock_accelerator, mock_setup_device, mock_load, mock_logger, mock_get_index_path):
+        """Legacy model_type-named files (dstore_llama_768) are renamed to canonical names, not rebuilt"""
+
+        canonical_dstore = os.path.join(self.temp_dir, "dstore_smollm2_768.arrow")
+        canonical_index = os.path.join(self.temp_dir, "index_smollm2_768.index")
+        legacy_dstore = os.path.join(self.temp_dir, "dstore_llama_768.arrow")
+        legacy_index = os.path.join(self.temp_dir, "index_llama_768.index")
+        schema = pa.schema([('keys', pa.list_(pa.float32(), 768)), ('vals', pa.int64())])
+        with pa.OSFile(legacy_dstore, 'wb') as sink:
+            with pa.ipc.new_stream(sink, schema) as writer:
+                writer.write_batch(pa.record_batch([[[0.0] * 768], [42]], schema=schema))
+        with open(legacy_index, 'wb') as f:
+            f.write(b"mock index")
+        mock_setup_device.return_value = MagicMock(type="cpu")
+        mock_config_instance = MagicMock()
+        mock_config_instance.max_position_embeddings = 2048
+        mock_config_instance.sliding_window = 512
+        mock_config.from_pretrained.return_value = mock_config_instance
+        mock_model_instance = MagicMock()
+        mock_model_instance.config.hidden_size = 768
+        mock_model_instance.config.model_type = "llama"
+        mock_model_instance.device = "cpu"
+        mock_model_instance.to.return_value = mock_model_instance
+        mock_model.from_pretrained.return_value = mock_model_instance
+        mock_saver_instance = MagicMock()
+        mock_saver_instance._get_arrow_file_path.return_value = canonical_dstore
+        mock_knn_saver.return_value = mock_saver_instance
+        mock_get_index_path.return_value = canonical_index
+        create_knn_datastore(self.config)
+        self.assertFalse(os.path.exists(legacy_dstore))
+        self.assertFalse(os.path.exists(legacy_index))
+        self.assertTrue(os.path.exists(canonical_dstore))
+        self.assertTrue(os.path.exists(canonical_index))
+        mock_load.assert_not_called()
+        mock_saver_instance.build_index.assert_not_called()
 
 
 class TestMainFunction(unittest.TestCase):

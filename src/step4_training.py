@@ -13,7 +13,7 @@ class DummyVideoReader:
     def __init__(self, *args, **kwargs): pass
 torchvision.io.VideoReader = DummyVideoReader
 # ----------------------------------------------------------------------
-import os, sys, gc, math, time, argparse, torch
+import gc, math, time, argparse, torch
 from dataclasses import dataclass
 from typing import Optional, List
 from pathlib import Path
@@ -33,12 +33,12 @@ logger = get_logger('4_training')
 
 
 # --- CONFIG ---
-from src.utils import resolve_base_model, get_model_config, get_knowledge_base_paths, get_dataset_tokenizer_model, normalize_model_name, extract_model_identifier, PROJECT_ROOT, DATA_DIR, KNOWLEDGE_BASE_DIR, OUTPUT_DIR
+from src.utils import resolve_base_model, get_model_config, get_knowledge_base_paths, get_dataset_tokenizer_model, normalize_model_name, extract_model_identifier, get_default_model, PROJECT_ROOT, DATA_DIR, KNOWLEDGE_BASE_DIR, OUTPUT_DIR
 
 CORPUS_NAME = get_pipeline_value("pipeline.corpus_name")
 TOKENIZED_DATA_NAME = get_pipeline_value(
     "steps.step3_pretraining.tokenized_data",
-    f"{CORPUS_NAME}_tokenized" if CORPUS_NAME else None
+    f"{CORPUS_NAME}_tokenized-{extract_model_identifier(get_default_model())}" if CORPUS_NAME else None
 )
 TOKENIZED_DATA_DIR = DATA_DIR / TOKENIZED_DATA_NAME if TOKENIZED_DATA_NAME else None
 
@@ -87,6 +87,7 @@ def setup_environment(config: TrainingConfig) -> None:
     logger.info("="*60)
     logger.info("⚡ STEP 4: MemDec Training")
     logger.info("="*60)
+    logger.info(f"Base model: {config.base_model}")
     logger.info("Starting training with configuration:")
     for k, v in config.__dict__.items():
         logger.info(f"  {k}: {v}")
@@ -128,9 +129,50 @@ def prepare_dataset(config: TrainingConfig) -> str:
         raise
 
 
+def _resolve_canonical_kb_paths(config: TrainingConfig) -> dict:
+    """
+    Fallback when model_config.json has no 'dstore'/'index' entries for the
+    model: locate the canonical files step3 writes, i.e.
+    dstore_{keyword}_{dim}.arrow / index_{keyword}_{dim}.index.
+    A single non-keyword-named file is accepted as a legacy leftover.
+    """
+    kb_dir = Path(config.knn_datastore_path)
+    keyword = extract_model_identifier(config.base_model, return_default=False)
+    dstore = index = None
+    if keyword:
+        hits = sorted(kb_dir.glob(f"dstore_{keyword}_*.arrow"))
+        if hits:
+            dstore = hits[0]
+        hits = sorted(kb_dir.glob(f"index_{keyword}_*.index"))
+        if hits:
+            index = hits[0]
+    if dstore is None:
+        hits = sorted(kb_dir.glob("dstore_*.arrow"))
+        if len(hits) == 1:
+            dstore = hits[0]
+            logger.warning(f"⚠️ Using non-canonical datastore file: {dstore.name}")
+        elif len(hits) > 1:
+            raise ValueError(
+                f"Multiple datastore files in {kb_dir} match no configured model name: "
+                f"{[h.name for h in hits]}"
+            )
+    if index is None:
+        hits = sorted(kb_dir.glob("index_*.index"))
+        if len(hits) == 1:
+            index = hits[0]
+            logger.warning(f"⚠️ Using non-canonical index file: {index.name}")
+    if dstore is None:
+        raise ValueError(f"No KNN datastore (*.arrow) found in {kb_dir} — run step3_pretraining first")
+    return {"dstore": str(dstore), "index": str(index) if index else ""}
+
+
 def setup_training_args(config: TrainingConfig, train_file: str) -> List[str]:
     """
     Prepare command line arguments for training.
+    
+    The knowledge base paths come from model_config.json when 'dstore'/'index'
+    are configured; otherwise they are resolved by locating the canonical
+    files step3 wrote (_resolve_canonical_kb_paths).
 
     Args:
         config: Training configuration
@@ -139,7 +181,10 @@ def setup_training_args(config: TrainingConfig, train_file: str) -> List[str]:
     Returns:
         List of command line arguments for MemoryDecoder training
     """
-    kb_paths = get_knowledge_base_paths(config.base_model, config.knn_datastore_path)
+    try:
+        kb_paths = get_knowledge_base_paths(config.base_model, config.knn_datastore_path)
+    except Exception:
+        kb_paths = _resolve_canonical_kb_paths(config)
     logger.info(f"Knowledge base files:")
     logger.info(f"  dstore: {kb_paths['dstore']}")
     logger.info(f"  index: {kb_paths['index']}")
@@ -159,6 +204,7 @@ def setup_training_args(config: TrainingConfig, train_file: str) -> List[str]:
         f"--checkpointing_steps={config.checkpointing_steps}",
         "--overwrite_cache",
         f"--knn_save_path={kb_paths['dstore']}",
+        f"--alpha={config.alpha}",
         f"--lmbda={config.lmbda}",
         f"--block_size={config.block_size}",
         "--project_name=memory_decoder_training",
@@ -357,8 +403,6 @@ def parse_arguments() -> argparse.Namespace:
                          help=f'Save checkpoint every N steps [default: {config_checkpointing_steps}]')
     train_group.add_argument('--num-train-epochs', type=int, default=config_num_train_epochs,
                          help=f'Number of training epochs (upper loop bound; --max-steps caps updates) [default: {config_num_train_epochs}]')
-    train_group.add_argument('--batch-size', type=int, default=config_batch_size,
-                         help=f'Batch size for training [default: {config_batch_size}]')
     train_group.add_argument('--per-device-train-batch-size', type=int, default=config_per_device_train_batch_size,
                          help=f'Per-device batch size for training [default: {config_per_device_train_batch_size}]')
     train_group.add_argument('--gradient-accumulation-steps', type=int, default=config_gradient_accumulation_steps,
@@ -424,7 +468,7 @@ if __name__ == '__main__':
         base_model=model_info['name'],
         tokenized_data_path=str(tokenized_data_path),
         checkpoint_dir=args.checkpoint,
-        batch_size=args.batch_size,
+        batch_size=args.per_device_train_batch_size,
         per_device_train_batch_size=args.per_device_train_batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         learning_rate=args.learning_rate,

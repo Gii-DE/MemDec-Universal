@@ -15,6 +15,7 @@
         • Logging to <code>outputs/logs/</code> and the console<br>
         • Load the config files (<code>pipeline_config.yaml</code>, <code>dataset_config.yaml</code>) and <code>.env</code> settings<br>
         • Resolve model references (including HuggingFace model names) via <code>model_config.json</code><br>
+        • Warn when a model reference matches no known keyword and falls back to the default model<br>
         • Resolve checkpoints by name, path or <code>latest</code>; validate model type<br>
         • Enforce a resolvable checkpoint for <em>step5</em> runs (auto-picks newest <code>step_*</code>, aborts otherwise)<br>
         • Manage CPU/GPU device and temporary-file cleanup<br>
@@ -62,6 +63,7 @@
         • Tokenize all texts (max 512 tokens, with attention masks and labels)<br>
         • Create a reproducible train/test split (default 80/20)<br>
         • Save Arrow and JSON formats plus tokenizer metadata for model consistency checks<br>
+        • Record the real tokenizer name/family in <code>dataset_metadata.json</code> even for unregistered models<br>
         • Reuse an existing tokenized dataset instead of re-tokenizing<br>
         • Parallelize over multiple workers
       </td>
@@ -75,9 +77,11 @@
         • Save key/value pairs as an Arrow datastore<br>
         • Build the FAISS index for fast similarity lookup<br>
         • Reuse a valid datastore/index or rebuild it if missing or broken<br>
+        • Migrate legacy datastore/index files named by HF architecture label (e.g. <code>llama</code>) to canonical model-identifier names (e.g. <code>smollm2</code>)<br>
         • Check that the model matches the dataset's tokenizer<br><br>
         <b>Modifications to <code>MemoryDecoder/knn_utils/saveEmbedMulti.py</code>:</b><br>
         • Support for more models (gemma3, qwen3.5, smollm3) with automatic dimension projection for cross-model compatibility; falls back to the text stack for multimodal checkpoints<br>
+        • Name datastore/index files by the model identifier instead of the HF architecture label<br>
         • Only real (non-padding) tokens become datastore entries<br>
         • Lower memory use: skips unused loss computation and single-process overhead<br>
         • Faster, dimension-aware datastore writing
@@ -90,6 +94,7 @@
         • Assemble all training arguments from config and CLI<br>
         • Validate dataset, tokenizer and model compatibility<br>
         • Resume automatically from the latest or a given checkpoint<br>
+        • Find the knowledge base automatically: when <code>model_config.json</code> lists no <code>dstore</code>/<code>index</code> paths, step4 scans <code>knowledge_base/</code> for files matching the model name and hidden size instead of aborting<br>
         • Configurable MemDec parameters (λ, k_neighbors, alpha, seed)<br>
         • Auto-raises the epoch count to reach <code>--max-steps</code>; <code>num_train_epochs</code> in <code>pipeline_config.yaml</code> sets a manual minimum<br>
         • Support for multiple base LLMs (gemma3, qwen3.5, smollm3)<br><br>

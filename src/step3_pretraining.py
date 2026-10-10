@@ -17,7 +17,7 @@ from typing import Optional
 from dataclasses import dataclass
 from datasets import load_from_disk
 from accelerate import Accelerator
-from transformers import AutoConfig, AutoModelForCausalLM, BitsAndBytesConfig
+from transformers import AutoConfig, AutoModelForCausalLM
 
 from MemoryDecoder.knn_utils.saveEmbedMulti import KNNSaverMulti, KEY_TYPE, get_index_path
 
@@ -130,10 +130,16 @@ def _validate_arrow_file(file_path: str, dimension: int) -> int | None:
 def create_knn_datastore(config: PretrainConfig) -> None:
     """
     Create KNN datastore using the existing knn_utils (MemDec Repo).
-    
+
+    Datastore/index files are named dstore_{model}_{dim}.arrow /
+    index_{model}_{dim}.index where {model} is the model identifier extracted
+    from config.base_model (e.g. 'smollm2'), not the HF architecture label.
+    Existing files named by model_type (e.g. 'dstore_llama_960') are migrated
+    to the canonical names instead of being rebuilt.
+
     Args:
         config: PretrainConfig containing model and datastore parameters
-        
+
     Returns:
         None
     """
@@ -147,13 +153,11 @@ def create_knn_datastore(config: PretrainConfig) -> None:
         torch.set_num_threads(max(1, os.cpu_count() or 1))
     torch_dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
     device_map  = "auto" if device.type == "cuda" else None
-    quantization_config = BitsAndBytesConfig(load_in_8bit=False) if device.type == "cuda" else None
     model_config = AutoConfig.from_pretrained(config.base_model)
     cleanup_qwen_config(model_config, config.base_model)
     model = AutoModelForCausalLM.from_pretrained(
         config.base_model,
         dtype=torch_dtype,
-        quantization_config=quantization_config,
         device_map=device_map,
         config=model_config,
         low_cpu_mem_usage=True
@@ -179,6 +183,7 @@ def create_knn_datastore(config: PretrainConfig) -> None:
         dimension=hidden_size,
         knn_keytype=KEY_TYPE.last_ffn_input,
         knn_gpu=(device.type == "cuda"),
+        model_name=config.base_model,
         accelerator=Accelerator()
     )
     knn_saver.model = model
@@ -186,10 +191,20 @@ def create_knn_datastore(config: PretrainConfig) -> None:
     model_keyword = extract_model_identifier(config.base_model, return_default=False)
     canonical_dstore = os.path.basename(knn_saver._get_arrow_file_path())
     canonical_index = os.path.basename(
-        get_index_path(config.knn_datastore_path, model.config.model_type, None, hidden_size)
+        get_index_path(config.knn_datastore_path, model_keyword or model.config.model_type, None, hidden_size)
     )
     dstore_file = os.path.join(config.knn_datastore_path, canonical_dstore)
     index_file = os.path.join(config.knn_datastore_path, canonical_index)
+    legacy_names = (
+        (f"dstore_{model.config.model_type}_{hidden_size}.arrow", dstore_file),
+        (f"index_{model.config.model_type}_{hidden_size}.index", index_file),
+    )
+    for legacy_name, canonical_path in legacy_names:
+        legacy_path = os.path.join(config.knn_datastore_path, legacy_name)
+        if legacy_name != os.path.basename(canonical_path) \
+                and os.path.exists(legacy_path) and not os.path.exists(canonical_path):
+            os.rename(legacy_path, canonical_path)
+            logger.info(f"📦 Migrated legacy datastore file → {os.path.basename(canonical_path)}")
     strays = [
         f for f in os.listdir(config.knn_datastore_path)
         if f.endswith(('.arrow', '.index', '.faiss'))
@@ -259,7 +274,7 @@ def create_knn_datastore(config: PretrainConfig) -> None:
             except Exception as e:
                 logger.error(f"❌ Error loading dataset from {arrow_path}: {str(e)}")
                 logger.exception("Detailed error:")
-                return
+                raise
         elif tokenized_path.exists():
             try:
                 logger.info(f"🔍 Loading dataset from: {tokenized_path}")
@@ -268,11 +283,11 @@ def create_knn_datastore(config: PretrainConfig) -> None:
             except Exception as e:
                 logger.error(f"❌ Error loading dataset from {tokenized_path}: {str(e)}")
                 logger.exception("Detailed error:")
-                return
+                raise
         else:
             logger.error(f"❌ Tokenized dataset not found at {tokenized_path} (tried: {tokenized_path} and {arrow_path})")
             logger.info("Please make sure to run step2_tokenization.py first to create the dataset.")
-            return
+            raise FileNotFoundError(f"Tokenized dataset not found at {tokenized_path}")
         logger.info("🔧 Initializing arrow writer for datastore creation...")
         knn_saver.break_into(model)  # creates the .arrow file and opens the writer
         total_positions, valid_positions = 0, 0

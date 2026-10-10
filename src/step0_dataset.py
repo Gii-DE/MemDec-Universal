@@ -89,16 +89,20 @@ def _download_with_progress(url: str, target_path: Path, chunk_size: int = 8192)
     """
     temp_path = target_path.with_suffix('.part')
     headers = {}
-    start_byte = 0
-    if temp_path.exists():
-        start_byte = os.path.getsize(temp_path)
+    start_byte = temp_path.stat().st_size if temp_path.exists() else 0
+    if start_byte:
         headers = {'Range': f'bytes={start_byte}-'}
     response = requests.get(url, headers=headers, stream=True)
-    response.raise_for_status()
-    total_size = int(response.headers.get('content-length', 0)) + start_byte
-    if total_size == start_byte and temp_path.exists():
-        logger.warning("File already fully downloaded")
+    if response.status_code == 416:
+        response.close()
+        logger.warning("Resume range rejected (416) — .part is already complete, finalizing.")
+        temp_path.rename(target_path)
         return
+    response.raise_for_status()
+    if start_byte and response.status_code != 206:
+        logger.warning("Server does not support Range resume — restarting download.")
+        start_byte = 0
+    total_size = int(response.headers.get('content-length', 0)) + start_byte
     progress = tqdm(
         total=total_size,
         unit='iB',
@@ -114,12 +118,7 @@ def _download_with_progress(url: str, target_path: Path, chunk_size: int = 8192)
                 progress.update(len(chunk))
                 f.write(chunk)
     progress.close()
-    if start_byte == 0 or not target_path.exists():
-        temp_path.rename(target_path)
-    else:
-        with open(target_path, 'ab') as f_out, open(temp_path, 'rb') as f_in:
-            shutil.copyfileobj(f_in, f_out)
-        temp_path.unlink()
+    temp_path.rename(target_path)
 
 
 def _extract_gz(gz_path: Path, target_path: Path) -> None:
@@ -293,10 +292,12 @@ def main(dataset_choice: str = None) -> None:
         else:
             raise ValueError(f"Unsupported file format: {extracted_file.suffix} (supported: .json, .jsonl, .tsv, .csv)")
         logger.info(f"📥 Loaded {len(raw_ds)} examples from {extracted_file}")
-        cleaning_process(raw_ds, dataset_choice)
+        dataset_name = dataset_choice if dataset_choice in DATASET_URLS \
+            else extracted_file.name.split('.')[0]
+        cleaning_process(raw_ds, dataset_name)
         logger.info("=" * 60)
         logger.info("ℹ️  Next step: Dataset Combination")
-        logger.info(f"   Run: python -m src.step0_data_management {dataset_choice} <dataset2> <datasetN>")
+        logger.info(f"   Run: python -m src.step0_data_management {dataset_name} <dataset2> <datasetN>")
         logger.info("=" * 60)
         
     except Exception as e:
@@ -315,15 +316,14 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Download & clean JSON/JSONL datasets")
     config_dataset = get_pipeline_value("steps.step0_dataset.default_dataset", None)
     local_file = get_pipeline_value("steps.step0_dataset.local_file", None)
-    if config_dataset is None and local_file:
-        config_dataset = local_file
+    default_choice = config_dataset or local_file
     available_datasets = list(DATASET_URLS.keys())
-    if not available_datasets:
-        parser.error("No datasets available in configuration. Please check dataset_config.yaml")
-    if config_dataset not in available_datasets:
-        config_dataset = available_datasets[0]
-    parser.add_argument("dataset", nargs="?", default=config_dataset, choices=available_datasets,
-                        help=f"Name of the dataset to download [default: {config_dataset}]")
+    if default_choice is None:
+        if not available_datasets:
+            parser.error("No datasets available in configuration. Please check dataset_config.yaml")
+        default_choice = available_datasets[0]
+    parser.add_argument("dataset", nargs="?", default=default_choice,
+                        help=f"Dataset key, direct http(s) URL, or local file path [default: {default_choice}]")
     parser.add_argument("--local-file", dest="local_file_override", 
                         help="Override local_file from config")
     return parser.parse_args()

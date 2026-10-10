@@ -9,8 +9,8 @@
     "gemma3-1b": {
       "name": "unsloth/gemma-3-1b-it",
       "description": "Gemma 3 1B (LLM)",
-      "dstore": null,
-      "index": null
+      "dstore": "dstore_gemma3-1b_1152.arrow",
+      "index": "index_gemma3-1b_1152.index"
     },
     "qwen3.5": {
       "name": "unsloth/Qwen3.5-0.8B",
@@ -21,8 +21,8 @@
     "qwen3.5-2b": {
       "name": "unsloth/Qwen3.5-2B",
       "description": "Qwen 3.5 2B (LLM)",
-      "dstore": null,
-      "index": null
+      "dstore": "dstore_qwen3.5-2b_2048.arrow",
+      "index": "index_qwen3.5-2b_2048.index"
     },
     "smollm3": {
       "name": "unsloth/SmolLM3-3B",
@@ -30,17 +30,17 @@
       "dstore": "dstore_smollm3_2048.arrow",
       "index": "index_smollm3_2048.index"
     },
-    "smollm2-1.7b": {
-      "name": "unsloth/SmolLM2-1.7B-Instruct",
-      "description": "SmolLM2 1.7B (LLM)",
-      "dstore": null,
-      "index": null
-    },
     "smollm2": {
       "name": "unsloth/SmolLM2-360M-Instruct",
       "description": "SmolLM2 360M (LLM)",
-      "dstore": null,
-      "index": null
+      "dstore": "dstore_smollm2_960.arrow",
+      "index": "index_smollm2_960.index"
+    },
+    "smollm2-1.7b": {
+      "name": "unsloth/SmolLM2-1.7B-Instruct",
+      "description": "SmolLM2 1.7B (LLM)",
+      "dstore": "dstore_smollm2-1.7b_2048.arrow",
+      "index": "index_smollm2-1.7b_2048.index"
     }
   }
 }

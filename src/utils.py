@@ -117,6 +117,13 @@ def get_logger(log_name: str | None = None) -> logging.Logger:
     if hasattr(stream_handler.stream, 'reconfigure'):
         stream_handler.stream.reconfigure(encoding='utf-8')
     logger.addHandler(stream_handler)
+    utils_logger = logging.getLogger("utils")
+    if all(isinstance(h, logging.NullHandler) for h in utils_logger.handlers):
+        utils_logger.handlers.clear()
+        for h in logger.handlers:
+            utils_logger.addHandler(h)
+        if utils_logger.level == logging.NOTSET:
+            utils_logger.setLevel(logging.INFO)
     return logger
 
 
@@ -363,7 +370,7 @@ def get_default_model() -> str:
     try:
         env_model = os.getenv("MEMDEC_MODEL")
         if env_model:
-            return env_model.lower()
+            return env_model.strip().strip("'\"").lower()
     except Exception:
         pass
     try:
@@ -567,41 +574,29 @@ def resolve_base_model(
     # 1. Env override — global user setting (.env MEMDEC_MODEL, highest priority)
     env_model = os.getenv("MEMDEC_MODEL")
     if env_model:
-        full_name = get_model_full_name(env_model.strip().strip("'\""))
-        logger.info(f"✅ Base model resolved from .env MEMDEC_MODEL: {full_name}")
-        return full_name
+        return get_model_full_name(env_model.strip().strip("'\""))
     # 2. CLI override — reached only when MEMDEC_MODEL is unset (.env outranks CLI)
     if cli_model:
-        full_name = get_model_full_name(cli_model)
-        logger.info(f"✅ Base model resolved from CLI: {full_name}")
-        return full_name
+        return get_model_full_name(cli_model)
     # 3. Config-file's per-step pipeline config (for specific step targets)
     if step_config_key:
         step_model = get_pipeline_value(f"{step_config_key}.base_model", None)
         if step_model:
-            full_name = get_model_full_name(step_model)
-            logger.info(f"✅ Base model resolved from {step_config_key}.base_model: {full_name}")
-            return full_name
+            return get_model_full_name(step_model)
     # 4. Config-file's pipeline-wide default model (if step targets stay the same for usecase)
     pipeline_default = get_pipeline_value("pipeline.models.default_model", None)
     if pipeline_default:
-        full_name = get_model_full_name(pipeline_default)
-        logger.info(f"✅ Base model resolved from pipeline.models.default_model: {full_name}")
-        return full_name
+        return get_model_full_name(pipeline_default)
     # 5. Auto-derive from tokenized dataset (checks its metadata for base model consistency)
     if tokenized_data:
         resolved_path = _resolve_named_path(tokenized_data, DATA_DIR, "tokenized-data")
         if resolved_path:
             metadata_model = get_dataset_tokenizer_model(resolved_path)
             if metadata_model:
-                full_name = get_model_full_name(metadata_model)
-                logger.info(f"✅ Base model auto-derived from tokenized data metadata: {full_name}")
-                return full_name
+                return get_model_full_name(metadata_model)
         keyword = extract_model_identifier(tokenized_data, return_default=False)
         if keyword:
-            full_name = get_model_full_name(keyword)
-            logger.info(f"✅ Base model auto-derived from tokenized data name: {full_name}")
-            return full_name
+            return get_model_full_name(keyword)
         logger.warning(
             f"⚠️ Could not auto-derive base model from tokenized data '{tokenized_data}'"
         )
@@ -622,18 +617,14 @@ def resolve_base_model(
                 continue
             keyword = extract_model_identifier(str(candidate), return_default=False)
             if keyword:
-                full_name = get_model_full_name(keyword)
-                logger.info(f"✅ Base model auto-derived from checkpoint '{checkpoint}': {full_name}")
-                return full_name
+                return get_model_full_name(keyword)
         logger.warning(
             f"⚠️ Could not auto-derive base model from checkpoint '{checkpoint}' — "
             "falling back to system default 'gemma3'"
         )
     # 7. Hard-coded system default 'gemma3' (lowest priority to guarantee a model is always found)
     default_model = get_default_model()
-    full_name = get_model_full_name(default_model)
-    logger.info(f"✅ Base model resolved from system default: {full_name}")
-    return full_name
+    return get_model_full_name(default_model)
 
 
 def _clean_model_string(s: str) -> str:
@@ -738,7 +729,13 @@ def get_model_full_name(model_input: str) -> str:
     Raises:
         ValueError: If the resolved keyword is not present in model_config.json
     """
-    keyword = extract_model_identifier(model_input)
+    keyword = extract_model_identifier(model_input, return_default=False)
+    if keyword is None:
+        logger.warning(
+            f"⚠️ Model input '{model_input}' matches no known model keyword — "
+            f"falling back to default model '{get_default_model()}'"
+        )
+        keyword = extract_model_identifier(model_input)
     return get_model_config(keyword)["name"]
 
 
@@ -882,7 +879,7 @@ def cleanup_temp_files(logger: logging.Logger | None = None) -> int:
                     logger.warning(f"Could not delete {cache_file}: {e}")
         return count
 
-    base_dir = Path('dataset')
+    base_dir = DATA_DIR
     cleaned = 0
     if base_dir.exists():
         for dataset_dir in base_dir.iterdir():

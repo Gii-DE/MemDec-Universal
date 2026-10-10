@@ -241,8 +241,10 @@ def main(config: EvalConfig) -> dict:
     logger.info("=" * 60)
     logger.info("📊 STEP 5: Quantitative PPL Evaluation")
     logger.info("=" * 60)
+    logger.info(f"Base model: {config.base_model}")
     for k, v in config.__dict__.items():
         logger.info(f"  {k}: {v}")
+    torch.manual_seed(config.seed)
     dataset    = load_eval_dataset(config)
     dataloader = DataLoader(
         dataset,

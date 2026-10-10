@@ -280,7 +280,9 @@ def cleaning_process(ds, dataset_name: str, field_mapping: dict = None) -> Datas
             return existing_ds
         except Exception:
             logger.warning(f"⚠️ Existing dataset not valid yet, reprocessing...")
-            
+            for stale in PROCESSED_DATA.parent.glob(f"{PROCESSED_DATA.name}_chunk_*"):
+                shutil.rmtree(stale, ignore_errors=True)
+
     logger.info("🔄 Processing dataset...")
     if len(ds) > 0:
         logger.info(f"📋 First example keys: {list(ds[0].keys())}")
@@ -445,21 +447,17 @@ def main(hf_config: str = None, hf_dataset: str = None) -> None:
         config = _load_usecase_config("dataset_config.yaml", DATASET_CONFIG_FILE)
         hf_config_data = config.get("huggingface", {})
         ds_config = get_dataset_config(hf_config, hf_dataset)
-        if ds_config:
-            hf_dataset_name = ds_config.get("dataset_name")
-            hf_split = ds_config.get("split", "train")
-            hf_config_value = ds_config.get("config")
-            dataset_name = ds_config.get("output_name", hf_config)
-        else:
-            hf_dataset_name = hf_dataset or hf_config_data.get("dataset_name", "openlegaldata/court-decisions-germany")
-            hf_split = hf_config_data.get("split", "train")
-            hf_config_value = hf_config
-            dataset_name = get_dataset_name_from_config(hf_config, hf_dataset)
-            if dataset_name == "unknown" and hf_dataset:
-                dataset_name = hf_dataset.replace("/", "_").replace("-", "_")
     except (FileNotFoundError, ImportError, KeyError):
-        hf_dataset_name = hf_dataset or "openlegaldata/court-decisions-germany"
-        hf_split = "train"
+        hf_config_data = {}
+        ds_config = None
+    if ds_config:
+        hf_dataset_name = ds_config.get("dataset_name")
+        hf_split = ds_config.get("split", "train")
+        hf_config_value = ds_config.get("config")
+        dataset_name = ds_config.get("output_name", hf_config)
+    else:
+        hf_dataset_name = hf_dataset or hf_config_data.get("dataset_name", "openlegaldata/court-decisions-germany")
+        hf_split = hf_config_data.get("split", "train")
         hf_config_value = hf_config
         dataset_name = get_dataset_name_from_config(hf_config, hf_dataset)
         if dataset_name == "unknown" and hf_dataset:

@@ -324,6 +324,9 @@ class TestDatasetSaving(unittest.TestCase):
         self.assertTrue(result["train_file"].startswith("temp_test/"))
         self.assertTrue(result["test_file"].startswith("temp_test/"))
         self.assertEqual(result["cleaned_dataset"], "cleaned_path")
+        self.assertEqual(result["tokenizer_model"], "test-tokenizer")
+        self.assertEqual(result["tokenizer_family"], "test-tokenizer")
+        self.assertEqual(result["compatible_models"], ["test-tokenizer"])
         with open(self.output_path / "dataset_metadata.json", "r", encoding="utf-8") as f:
             disk_meta = json.load(f)
         self.assertFalse(Path(disk_meta["train_file"]).is_absolute())
@@ -461,6 +464,7 @@ class TestEdgeCases(unittest.TestCase):
             mock_load.return_value = mock_dataset
             tokenized_dir = data_dir / "existing_tokenized_tokenized-gemma3"
             tokenized_dir.mkdir()
+            (tokenized_dir / "arrow_data").mkdir()
             metadata_file = tokenized_dir / "dataset_metadata.json"
             with open(metadata_file, 'w') as f:
                 json.dump({"train_samples": 100, "test_samples": 25}, f)

@@ -13,6 +13,8 @@
 # - Performance & Memory Optimization: KNNSaverMulti drops labels on decoder-only forwards to skip the unused CE loss computation
 # - Performance & Memory Optimization: _save_step_data skips accelerator gather/wait_for_everyone on single-process runs and builds the keys column in one pass via FixedSizeListArray
 # - Datastore I/O: get_dstore_path/get_index_path rewrite a mismatched _<dim> suffix in configured filenames instead of writing to the wrong file
+# - Datastore I/O: KNNSaverMulti derives datastore/index filenames from the model identifier via _model_key() (model_name param
+#   or config._name_or_path, e.g. 'smollm2') instead of the HF architecture label model_type (e.g. 'llama')
 # - Datastore I/O: Preserved Arrow streaming writer and keys/vals schema for datastore creation
 #
 # The original code is available at: 
@@ -324,12 +326,13 @@ class KNNWrapperMulti(object):
 }
 
 class KNNSaverMulti(object):
-    def __init__(self, dstore_dir, dimension, knn_keytype=None, knn_gpu=False, training_args=None, eval_subset=None, accelerator=None):
+    def __init__(self, dstore_dir, dimension, knn_keytype=None, knn_gpu=False, training_args=None, eval_subset=None, accelerator=None, model_name=None):
         self.eval_subset = eval_subset
         self.dstore_dir = dstore_dir
         self.dimension = dimension
         self.knn_keytype = KEY_TYPE.last_ffn_input if knn_keytype is None else knn_keytype
         self.training_args = training_args
+        self.model_name = model_name
         # Multi-GPU settings
         self.world_size = training_args.world_size if training_args else 1
         self.process_index = training_args.local_process_index if training_args else 0
@@ -346,9 +349,32 @@ class KNNSaverMulti(object):
                 logger.info(f"Creating directory {self.dstore_dir} for storing the datastore.")
                 os.makedirs(self.dstore_dir, exist_ok=True)
 
+    def _model_key(self):
+        """
+        Model key used in datastore/index filenames.
+
+        model.config.model_type is the HF *architecture* label (e.g. 'llama' for
+        SmolLM2, 'gemma3_text' for Gemma3), which is misleading and collides
+        across different models sharing an architecture. Prefer the real model
+        identifier (e.g. 'smollm2') extracted from the loaded model's name.
+        """
+        if extract_model_identifier is not None:
+            for source in (self.model_name,
+                           getattr(self.model.config, '_name_or_path', None),
+                           getattr(self.model, 'name_or_path', None)):
+                if not source:
+                    continue
+                try:
+                    key = extract_model_identifier(str(source), return_default=False)
+                except Exception:
+                    key = None
+                if key:
+                    return key
+        return self.model.config.model_type
+
     def _get_arrow_file_path(self):
         """Get the Arrow file path (single file for all processes)"""
-        base_path = get_dstore_path(self.dstore_dir, self.model.config.model_type, self.eval_subset, self.dimension)
+        base_path = get_dstore_path(self.dstore_dir, self._model_key(), self.eval_subset, self.dimension)
         return base_path
 
     def _setup_arrow_writer(self):
@@ -470,7 +496,7 @@ class KNNSaverMulti(object):
         # Set format to numpy for proper array conversion
         dstore.set_format(type='numpy', columns=['keys', 'vals'])
         logger.info('Building index...')
-        index_name = get_index_path(self.dstore_dir, self.model.config.model_type, self.eval_subset, self.dimension)
+        index_name = get_index_path(self.dstore_dir, self._model_key(), self.eval_subset, self.dimension)
         quantizer = faiss.IndexFlatL2(self.dimension)
         index = faiss.IndexIVFPQ(quantizer, self.dimension, ncentroids, code_size, 8)
         index.nprobe = probe
